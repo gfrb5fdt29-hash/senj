@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Senj útikalauz</title>
+<meta name="description" content="Strandok, kilátók, éttermek és praktikus helyek Senj környékén — útvonaltervezéssel.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Senj">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===== FELFEDEZÉS ===== -->
+<main id="view-home" class="view active">
+  <header class="top">
+    <h1>Senj <span class="thin">útikalauz</span></h1>
+    <div class="searchwrap">
+      <svg class="sic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="search" type="search" placeholder="Keresés: hely, falu, jellemző…" autocomplete="off" enterkeyhint="search">
+      <button id="searchclear" class="sclear" aria-label="Törlés">✕</button>
+    </div>
+  </header>
+
+  <div id="home-content">
+    <div class="rowhead">
+      <h2>Kategóriák</h2>
+      <label class="switch"><input type="checkbox" id="islands"><span class="knob"></span><span class="slabel">Szigetek is</span></label>
+    </div>
+    <div class="catgrid" id="catgrid"></div>
+
+    <div class="rowhead"><h2>Neked ajánlott</h2><span class="hint">grill · pizza · tészta</span></div>
+    <div class="hscroll" id="reco"></div>
+
+    <div class="rowhead"><h2>Közel hozzád</h2><span class="hint" id="nearhint"></span></div>
+    <div id="nearlist"></div>
+  </div>
+
+  <div id="search-results" class="hidden"></div>
+</main>
+
+<!-- ===== LISTA (kategória / gyűjtemény) ===== -->
+<main id="view-list" class="view">
+  <header class="top sub">
+    <button class="back" id="listback" aria-label="Vissza">‹</button>
+    <h1 id="listtitle"></h1>
+  </header>
+  <div class="chips" id="listchips"></div>
+  <div id="listbody"></div>
+</main>
+
+<!-- ===== TÉRKÉP ===== -->
+<main id="view-map" class="view">
+  <div id="map"></div>
+  <div class="mapchips chips" id="mapchips"></div>
+  <div id="mapoffline" class="mapmsg hidden">
+    <p>A térkép internetkapcsolatot igényel.<br>A helyek listái offline is elérhetők.</p>
+    <button class="btn" data-goto="home">Vissza a felfedezéshez</button>
+  </div>
+</main>
+
+<!-- ===== GYŰJTEMÉNYEK ===== -->
+<main id="view-coll" class="view">
+  <header class="top"><h1>Gyűjtemények</h1></header>
+  <div id="collbody"></div>
+</main>
+
+<!-- ===== KEDVENCEK ===== -->
+<main id="view-fav" class="view">
+  <header class="top"><h1>Kedvencek</h1></header>
+  <div id="favbody"></div>
+</main>
+
+<!-- ===== ADATLAP (bottom sheet) ===== -->
+<div id="sheetback" class="sheetback hidden"></div>
+<section id="sheet" class="sheet hidden" role="dialog" aria-modal="true">
+  <div class="grip"></div>
+  <div id="sheetbody"></div>
+</section>
+
+<!-- ===== ALSÓ NAVIGÁCIÓ ===== -->
+<nav class="bottomnav">
+  <button data-tab="home" class="active">
+    <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>Felfedezés</span>
+  </button>
+  <button data-tab="map">
+    <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>Térkép</span>
+  </button>
+  <button data-tab="coll">
+    <svg viewBox="0 0 24 24"><path d="M4 5h7v7H4zm9 0h7v7h-7zM4 14h7v6H4zm9 0h7v6h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>Gyűjtemények</span>
+  </button>
+  <button data-tab="fav">
+    <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.6-9.3-9A5.4 5.4 0 0 1 12 6.1 5.4 5.4 0 0 1 21.3 11C19 15.4 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>Kedvencek</span>
+  </button>
+</nav>
+
+<div id="installtip" class="installtip hidden">
+  <p>Telepítsd az útikalauzt: <b>Megosztás</b> <svg viewBox="0 0 24 24" class="shic"><path d="M12 3v12m0-12 -4 4m4-4 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 11v9h14v-9" stroke="currentColor" stroke-width="2" fill="none"/></svg> → <b>Főképernyőhöz adás</b></p>
+  <button id="installdismiss" aria-label="Bezárás">✕</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
