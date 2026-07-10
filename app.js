@@ -29,6 +29,11 @@ let favs = new Set(JSON.parse(localStorage.getItem('senj_favs') || '[]'));
 let islandsOn = localStorage.getItem('senj_islands') === '1';
 let map = null, markerLayer = null, mapFilter = 'mind';
 let listState = null;         // aktuális listanézet paraméterei
+let currentSheetId = null;
+let currentNavState = null;
+let navDepth = 0, navEpoch = 0;
+let navReady = false, applyingNav = false;
+let scrollSaveTimer = null;
 
 /* ---------- segédek ---------- */
 const $ = s => document.querySelector(s);
@@ -113,10 +118,9 @@ function renderHome() {
 
 /* ---------- LISTA nézet ---------- */
 function openList(state) {
-  listState = { chip: 'mind', ...state };
-  $('#listtitle').textContent = state.cim;
-  renderList();
-  showView('list', true);
+  const source = document.querySelector('.bottomnav button.active')?.dataset.tab || 'home';
+  const nextList = { chip: 'mind', source, ...state };
+  navigateTo({ screen: 'list', list: nextList, scrollY: 0 });
 }
 function listChipDefs() {
   const s = listState;
@@ -134,7 +138,10 @@ function listItems() {
   const s = listState;
   let arr = DATA.filter(visible);
   if (s.tipus === 'cat') arr = arr.filter(p => p.kat === s.cat);
-  if (s.tipus === 'coll') arr = arr.filter(s.szuro);
+  if (s.tipus === 'coll') {
+    const coll = COLLS.find(c => c.id === s.coll);
+    arr = coll ? arr.filter(coll.szuro) : [];
+  }
   const c = s.chip;
   if (c && c !== 'mind') {
     if (c === 'reco') arr = arr.filter(isReco);
@@ -189,8 +196,16 @@ function toggleFav(id) {
 
 /* ---------- ADATLAP ---------- */
 function openSheet(id) {
+  if (!DATA.some(x => x.id === id)) return;
+  const underlay = captureNavState();
+  delete underlay.sheetId;
+  delete underlay.underlay;
+  navigateTo({ ...underlay, sheetId: id, underlay });
+}
+function renderSheet(id) {
   const p = DATA.find(x => x.id === id);
   if (!p) return;
+  currentSheetId = id;
   const c = CAT[p.kat];
   const d = distOf(p);
   const e = p.ertekeles;
@@ -234,16 +249,24 @@ function openSheet(id) {
   $('#sheetbody').innerHTML = html;
   $('#sheet').classList.remove('hidden');
   $('#sheetback').classList.remove('hidden');
-  $('#sheetfav').onclick = () => { toggleFav(id); openSheet(id); renderFavs(); };
+  $('#sheetfav').onclick = () => { toggleFav(id); renderSheet(id); renderFavs(); saveCurrentNav(); };
   const mbtn = $('#sheetmap');
-  if (mbtn) mbtn.onclick = () => { closeSheet(); showTab('map'); setTimeout(() => focusOnMap(p), 250); };
+  if (mbtn) mbtn.onclick = () => openMapFromSheet(p);
 }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 function datumTxtSafe(e) {
   const d = e.rating?.captured_at || e.datum;
   return d ? datumTxt(d) : '';
 }
-function closeSheet() { $('#sheet').classList.add('hidden'); $('#sheetback').classList.add('hidden'); }
+function hideSheet() {
+  currentSheetId = null;
+  $('#sheet').classList.add('hidden');
+  $('#sheetback').classList.add('hidden');
+}
+function closeSheet() {
+  if (currentSheetId && navReady && navDepth > 0) history.back();
+  else hideSheet();
+}
 
 /* ---------- TÉRKÉP ---------- */
 function initMap() {
@@ -255,6 +278,7 @@ function initMap() {
   }).addTo(map).on('tileerror', () => { if (!navigator.onLine) $('#mapoffline').classList.remove('hidden'); });
   markerLayer = L.layerGroup().addTo(map);
   if (pos) L.circleMarker([pos.lat, pos.lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#37d3c0', fillOpacity: 1 }).addTo(map);
+  map.on('moveend', () => { if (navReady && !applyingNav) saveCurrentNav(); });
   renderMarkers();
 }
 const MAPSZIN = { strand:'#38bdf8', kilato_foto:'#ffb454', etterem:'#fb7185', praktikus:'#a78bfa' };
@@ -268,6 +292,18 @@ function renderMarkers() {
   });
 }
 function focusOnMap(p) { initMap(); map.setView([p.lat, p.lng], 14); openSheet(p.id); }
+function openMapFromSheet(p) {
+  const origin = captureNavState();
+  saveCurrentNav(origin);
+  navigateTo({
+    screen: 'map',
+    mapFilter,
+    mapView: { lat: p.lat, lng: p.lng, zoom: 14 },
+    sheetId: p.id,
+    underlay: origin,
+    scrollY: 0,
+  });
+}
 function renderMapChips() {
   const defs = [['mind','Mind'], ...Object.entries(CAT).map(([k, c]) => [k, c.nev])];
   $('#mapchips').innerHTML = defs.map(([k, l]) =>
@@ -294,23 +330,166 @@ function runSearch(q) {
   res.innerHTML = `<div class="reshead">${hits.length} találat</div>` +
     (hits.map(placeRow).join('') || '<div class="empty">Nincs találat. Próbáld másképp — pl. „pizza", „naplemente", „Krk".</div>');
 }
+function handleSearchInput(q) {
+  const hasQuery = !!norm(q.trim());
+  const wasSearching = !!norm(currentNavState?.search || '');
+  if (!navReady) return runSearch(q);
+  if (hasQuery && !wasSearching) {
+    saveCurrentNav({ ...(currentNavState || { screen: 'home' }), search: '', scrollY: window.scrollY || 0 });
+    navigateTo({ screen: 'home', search: q, scrollY: 0 }, { preserveCurrent: false });
+  } else if (hasQuery) {
+    runSearch(q);
+    saveCurrentNav({ ...captureNavState(), search: q });
+  } else if (wasSearching && navDepth > 0) {
+    history.back();
+  } else {
+    runSearch('');
+    saveCurrentNav({ screen: 'home', search: '', scrollY: 0 });
+  }
+}
 
 /* ---------- nézetváltás ---------- */
+function setActiveTab(t) {
+  document.querySelectorAll('.bottomnav button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === t));
+}
 function showView(v, keepTab) {
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   $('#view-' + v).classList.add('active');
-  if (!keepTab) document.querySelectorAll('.bottomnav button').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === v));
+  if (!keepTab) setActiveTab(v);
   window.scrollTo(0, 0);
 }
-function showTab(t) {
-  closeSheet();
+function renderTab(t) {
+  hideSheet();
   showView(t);
   if (t === 'map') { initMap(); renderMapChips(); setTimeout(() => map.invalidateSize(), 60); if (!navigator.onLine) $('#mapoffline').classList.remove('hidden'); }
   if (t === 'fav') renderFavs();
   if (t === 'coll') renderColls();
   if (t === 'home') renderHome();
 }
+function cleanNavState(state) {
+  let s;
+  try { s = JSON.parse(JSON.stringify(state || {})); } catch (err) { s = {}; }
+  if (!['home','map','coll','fav','list'].includes(s.screen)) s = { screen: 'home' };
+  if (s.screen === 'list' && !s.list) s = { screen: 'home' };
+  if (s.sheetId && !DATA.some(p => p.id === s.sheetId)) {
+    return cleanNavState(s.underlay || { screen: s.screen, list: s.list, mapFilter: s.mapFilter });
+  }
+  s.scrollY = Number.isFinite(s.scrollY) ? Math.max(0, s.scrollY) : 0;
+  return s;
+}
+function captureNavState() {
+  const active = document.querySelector('.view.active')?.id?.replace('view-', '') || 'home';
+  const state = { screen: active, scrollY: window.scrollY || 0 };
+  if (active === 'list' && listState) state.list = { ...listState };
+  if (active === 'home') state.search = $('#search').value;
+  if (active === 'map') {
+    state.mapFilter = mapFilter;
+    if (map) {
+      const center = map.getCenter();
+      state.mapView = { lat: center.lat, lng: center.lng, zoom: map.getZoom() };
+    }
+  }
+  if (currentSheetId) {
+    state.sheetId = currentSheetId;
+    if (currentNavState?.sheetId === currentSheetId && currentNavState.underlay)
+      state.underlay = currentNavState.underlay;
+  }
+  return cleanNavState(state);
+}
+function persistNavState(state) {
+  localStorage.setItem('senj_nav_state', JSON.stringify(cleanNavState(state)));
+}
+function saveCurrentNav(state = captureNavState()) {
+  if (!navReady) return;
+  const clean = cleanNavState(state);
+  currentNavState = clean;
+  history.replaceState({ senj: true, epoch: navEpoch, depth: navDepth, nav: clean }, '', location.href);
+  persistNavState(clean);
+}
+function applyNavState(state) {
+  const clean = cleanNavState(state);
+  applyingNav = true;
+  hideSheet();
+
+  if (clean.screen === 'list') {
+    listState = { chip: 'mind', source: 'home', ...clean.list };
+    $('#listtitle').textContent = listState.cim || 'Helyek';
+    renderList();
+    showView('list', true);
+    setActiveTab(listState.source || 'home');
+  } else if (clean.screen === 'home') {
+    renderTab('home');
+    $('#search').value = clean.search || '';
+    runSearch(clean.search || '');
+  } else {
+    renderTab(clean.screen);
+  }
+
+  if (clean.screen === 'map') {
+    mapFilter = clean.mapFilter || 'mind';
+    renderMapChips();
+    renderMarkers();
+    const mv = clean.mapView;
+    if (mv && Number.isFinite(mv.lat) && Number.isFinite(mv.lng) && Number.isFinite(mv.zoom))
+      map.setView([mv.lat, mv.lng], mv.zoom);
+    setTimeout(() => map.invalidateSize(), 60);
+  }
+  if (clean.sheetId) renderSheet(clean.sheetId);
+
+  currentNavState = clean;
+  persistNavState(clean);
+  requestAnimationFrame(() => window.scrollTo(0, clean.scrollY || 0));
+  applyingNav = false;
+}
+function navigateTo(state, { preserveCurrent = true } = {}) {
+  if (!navReady) return applyNavState(state);
+  if (preserveCurrent) saveCurrentNav();
+  const clean = cleanNavState(state);
+  navDepth += 1;
+  currentNavState = clean;
+  history.pushState({ senj: true, epoch: navEpoch, depth: navDepth, nav: clean }, '', location.href);
+  applyNavState(clean);
+}
+function showTab(t) {
+  if (!['home','map','coll','fav'].includes(t)) return;
+  navEpoch += 1;
+  navDepth = 0;
+  const next = { screen: t, scrollY: 0 };
+  currentNavState = next;
+  history.replaceState({ senj: true, epoch: navEpoch, depth: 0, nav: next }, '', location.href);
+  applyNavState(next);
+}
+function isInternalNav(state) {
+  return state.screen === 'list' || !!norm(state.search || '') || !!state.sheetId;
+}
+function initNavigation() {
+  let restored = null;
+  try { restored = cleanNavState(JSON.parse(localStorage.getItem('senj_nav_state') || 'null')); } catch (err) {}
+  const home = { screen: 'home', search: '', scrollY: 0 };
+  navEpoch = Date.now();
+  history.replaceState({ senj: true, guard: true, epoch: navEpoch, depth: -1 }, '', location.href);
+  history.pushState({ senj: true, epoch: navEpoch, depth: 0, nav: isInternalNav(restored || home) ? home : (restored || home) }, '', location.href);
+  navDepth = 0;
+  navReady = true;
+  if (restored && isInternalNav(restored)) {
+    navDepth = 1;
+    history.pushState({ senj: true, epoch: navEpoch, depth: 1, nav: restored }, '', location.href);
+    applyNavState(restored);
+  } else {
+    applyNavState(restored || home);
+  }
+}
+window.addEventListener('popstate', e => {
+  if (!navReady) return;
+  const h = e.state;
+  if (!h?.senj || h.guard || h.epoch !== navEpoch) {
+    history.forward();
+    return;
+  }
+  navDepth = h.depth || 0;
+  applyNavState(h.nav || { screen: 'home' });
+});
 
 /* ---------- események ---------- */
 document.addEventListener('click', e => {
@@ -321,29 +500,34 @@ document.addEventListener('click', e => {
   const cat = e.target.closest('[data-cat]');
   if (cat) return openList({ tipus: 'cat', cat: cat.dataset.cat, cim: CAT[cat.dataset.cat].nev });
   const coll = e.target.closest('[data-coll]');
-  if (coll) { const c = COLLS.find(x => x.id === coll.dataset.coll); return openList({ tipus: 'coll', szuro: c.szuro, cim: c.cim }); }
+  if (coll) { const c = COLLS.find(x => x.id === coll.dataset.coll); return openList({ tipus: 'coll', coll: c.id, cim: c.cim }); }
   const chip = e.target.closest('[data-chip]');
-  if (chip) { listState.chip = chip.dataset.chip; return renderList(); }
+  if (chip) { listState.chip = chip.dataset.chip; renderList(); saveCurrentNav(); return; }
   const mchip = e.target.closest('[data-mapchip]');
-  if (mchip) { mapFilter = mchip.dataset.mapchip; renderMapChips(); return renderMarkers(); }
+  if (mchip) { mapFilter = mchip.dataset.mapchip; renderMapChips(); renderMarkers(); saveCurrentNav(); return; }
   const pl = e.target.closest('[data-id]');
   if (pl) return openSheet(pl.dataset.id);
 });
-$('#listback').onclick = () => showTab('home');
+$('#listback').onclick = () => { if (navDepth > 0) history.back(); };
 $('#sheetback').onclick = closeSheet;
 $('#sheet').addEventListener('touchstart', e => { window._ty = e.touches[0].clientY; }, { passive: true });
 $('#sheet').addEventListener('touchend', e => {
   if ($('#sheet').scrollTop <= 0 && e.changedTouches[0].clientY - (window._ty || 0) > 90) closeSheet();
 }, { passive: true });
-$('#search').addEventListener('input', e => runSearch(e.target.value));
-$('#searchclear').onclick = () => { $('#search').value = ''; runSearch(''); };
+$('#search').addEventListener('input', e => handleSearchInput(e.target.value));
+$('#searchclear').onclick = () => { $('#search').value = ''; handleSearchInput(''); };
 $('#islands').checked = islandsOn;
 $('#islands').addEventListener('change', e => {
   islandsOn = e.target.checked;
   localStorage.setItem('senj_islands', islandsOn ? '1' : '0');
   renderHome(); renderColls(); renderMarkers();
   if (listState) renderList();
+  saveCurrentNav();
 });
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollSaveTimer);
+  scrollSaveTimer = setTimeout(() => { if (navReady && !applyingNav) saveCurrentNav(); }, 120);
+}, { passive: true });
 
 /* ---------- telepítési tipp (iOS) ---------- */
 (function installTip() {
@@ -364,12 +548,18 @@ async function boot() {
     $('#home-content').innerHTML = '<div class="empty">Nem sikerült betölteni a helyeket.<br>Ellenőrizd a kapcsolatot, majd frissítsd az oldalt.</div>';
     return;
   }
-  renderHome();
+  initNavigation();
   navigator.geolocation?.getCurrentPosition(
-    g => { pos = { lat: g.coords.latitude, lng: g.coords.longitude }; renderHome(); if (listState) renderList(); if (map && !map._posDot) { } },
+    g => {
+      pos = { lat: g.coords.latitude, lng: g.coords.longitude };
+      renderHome();
+      if (currentNavState?.search) runSearch(currentNavState.search);
+      if (listState) renderList();
+      if (map && !map._posDot) { }
+    },
     () => {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
   );
 }
 boot();
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});

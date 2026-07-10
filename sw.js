@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v1';
+const CACHE = 'senj-utikalauz-v2';
 const CORE = [
   './',
   'index.html',
@@ -42,11 +42,29 @@ self.addEventListener('fetch', e => {
   if (url.hostname.includes('cartocdn')) return;
 
   e.respondWith((async () => {
-    const cached = await caches.match(e.request, { ignoreSearch: url.origin === location.origin });
+    const sameOrigin = url.origin === location.origin;
+    const cached = await caches.match(e.request, { ignoreSearch: sameOrigin });
+
+    // Az alkalmazás váza online mindig frissül; offline a legutóbbi jó példány indul.
+    if (sameOrigin && (e.request.mode === 'navigate' || /\.(?:js|css|json|webmanifest)$/.test(url.pathname))) {
+      try {
+        const resp = await fetch(e.request, { cache: 'no-cache' });
+        if (resp.ok) {
+          const c = await caches.open(CACHE);
+          await c.put(e.request.mode === 'navigate' ? 'index.html' : e.request, resp.clone());
+        }
+        return resp;
+      } catch (err) {
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') return caches.match('index.html');
+        throw err;
+      }
+    }
+
     if (cached) return cached;
     try {
       const resp = await fetch(e.request);
-      if (url.origin === location.origin && resp.ok) {
+      if (sameOrigin && resp.ok) {
         const c = await caches.open(CACHE);
         c.put(e.request, resp.clone());
       }
