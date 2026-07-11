@@ -238,6 +238,56 @@ body{padding-bottom:var(--nav-h)}
 .homecoll b{font-size:14px;line-height:1.25}
 .homecoll .sub{color:var(--muted);font-size:12px}
 
+/* ---------- Felfedezés: teljes képernyős víz-háttér ---------- */
+#view-home.active{
+  min-height:calc(100vh - var(--nav-h));
+  background:
+    linear-gradient(180deg,rgba(3,27,53,.14) 0%,rgba(3,27,53,.05) 52%,rgba(3,27,53,.28) 100%),
+    url('images/senj-water-background.jpg') center / cover fixed;
+}
+#view-home .top{
+  background:linear-gradient(180deg,rgba(4,27,53,.96) 0%,rgba(4,27,53,.82) 55%,rgba(4,27,53,0) 100%);
+}
+#view-home .top h1{color:#fff;text-shadow:0 2px 12px rgba(1,18,37,.38)}
+#view-home .top h1 .thin{color:rgba(255,255,255,.82)}
+#view-home .gear{
+  color:#fff;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);
+  box-shadow:0 5px 18px rgba(0,17,39,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+#view-home .searchwrap{
+  background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.74);
+  box-shadow:0 10px 28px rgba(0,18,39,.24);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+#view-home .rowhead h2,#view-home .rowhead .hint{color:#fff;text-shadow:0 1px 5px rgba(1,20,40,.42)}
+#view-home .catcard,#view-home .homecoll,#view-home .recocard{
+  background:rgba(255,255,255,.95);border-color:rgba(255,255,255,.7);
+  box-shadow:0 8px 24px rgba(0,20,43,.23);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+#view-home .catcard[data-cat="etterem"],#view-home .recocard:first-child{
+  background:linear-gradient(145deg,#EC6B68,#D94F58);border-color:rgba(255,255,255,.44);color:#fff;
+}
+#view-home .catcard[data-cat="etterem"] span,#view-home .recocard:first-child .sub{color:rgba(255,255,255,.86)!important}
+#view-home .catcard[data-cat="etterem"] .cic{background:rgba(255,255,255,.18)!important;color:#fff!important}
+#view-home #nearlist{
+  margin:0 18px 22px;overflow:hidden;border-radius:var(--radius);border:1px solid rgba(255,255,255,.7);
+  background:rgba(255,255,255,.95);box-shadow:0 8px 24px rgba(0,20,43,.23);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+#view-home #nearlist .place{background:transparent!important}
+#view-home #search-results{
+  margin:8px 18px 22px;overflow:hidden;border-radius:var(--radius);border:1px solid rgba(255,255,255,.7);
+  background:rgba(255,255,255,.95);box-shadow:0 8px 24px rgba(0,20,43,.23);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+#view-home #search-results .place{background:transparent!important}
+#view-home #search-results .reshead{color:var(--muted)}
+body:has(#view-home.active) .bottomnav{
+  background:rgba(4,27,53,.8);border-color:rgba(255,255,255,.18);
+  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+}
+body:has(#view-home.active) .bottomnav button{color:rgba(255,255,255,.72)}
+body:has(#view-home.active) .bottomnav button.active{color:#fff}
+
 /* ---------- beállítások ---------- */
 #settings h2{margin:2px 0 8px;font-size:20px;font-weight:700;color:var(--navy)}
 .setgroup{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
