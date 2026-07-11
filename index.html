@@ -5,23 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Senj útikalauz</title>
 <meta name="description" content="Strandok, kilátók, éttermek és praktikus helyek Senj környékén — útvonaltervezéssel.">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#F7F9F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Senj">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preload" href="fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="poppins.css?v=1">
+<link rel="stylesheet" href="app.css?v=9">
 </head>
 <body>
 
 <!-- ===== FELFEDEZÉS ===== -->
 <main id="view-home" class="view active">
   <header class="top">
-    <h1>Senj <span class="thin">útikalauz</span></h1>
+    <div class="topbar">
+      <h1>Senj <span class="thin">útikalauz</span></h1>
+      <button class="gear" id="opensettings" aria-label="Beállítások">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6v2.6M12 18.8v2.6M4 7l2.3 1.3M17.7 15.7 20 17M4 17l2.3-1.3M17.7 8.3 20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
     <div class="searchwrap">
       <svg class="sic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <input id="search" type="search" placeholder="Keresés: hely, falu, jellemző…" autocomplete="off" enterkeyhint="search">
@@ -30,11 +38,11 @@
   </header>
 
   <div id="home-content">
-    <div class="rowhead">
-      <h2>Kategóriák</h2>
-      <label class="switch"><input type="checkbox" id="islands"><span class="knob"></span><span class="slabel">Szigetek is</span></label>
-    </div>
+    <div class="rowhead"><h2>Kategóriák</h2></div>
     <div class="catgrid" id="catgrid"></div>
+
+    <div class="rowhead"><h2>Gyűjtemények</h2></div>
+    <div class="hscroll" id="homecolls"></div>
 
     <div class="rowhead"><h2>Neked ajánlott</h2><span class="hint">grill · pizza · tészta</span></div>
     <div class="hscroll" id="reco"></div>
@@ -66,23 +74,44 @@
   </div>
 </main>
 
-<!-- ===== GYŰJTEMÉNYEK ===== -->
-<main id="view-coll" class="view">
-  <header class="top"><h1>Gyűjtemények</h1></header>
-  <div id="collbody"></div>
+<!-- ===== MENTETT ===== -->
+<main id="view-fav" class="view">
+  <header class="top"><h1>Mentett</h1></header>
+  <div id="favbody"></div>
 </main>
 
-<!-- ===== KEDVENCEK ===== -->
-<main id="view-fav" class="view">
-  <header class="top"><h1>Kedvencek</h1></header>
-  <div id="favbody"></div>
+<!-- ===== ÚTITERV (napi tervező) ===== -->
+<main id="view-terv" class="view">
+  <header class="top"><h1>Útiterv</h1></header>
+  <p class="tervintro">Kész napok a környék folyosói szerint — reggeltől naplementéig, vacsorával.</p>
+  <div class="tervctrl" id="tervctrl"></div>
+  <div id="tervbody"></div>
 </main>
 
 <!-- ===== ADATLAP (bottom sheet) ===== -->
 <div id="sheetback" class="sheetback hidden"></div>
-<section id="sheet" class="sheet hidden" role="dialog" aria-modal="true">
+<section id="sheet" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="sheettitle" tabindex="-1">
   <div class="grip"></div>
   <div id="sheetbody"></div>
+</section>
+
+<!-- ===== BEÁLLÍTÁSOK ===== -->
+<div id="settingsback" class="sheetback hidden"></div>
+<section id="settings" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="settingstitle" tabindex="-1">
+  <div class="grip"></div>
+  <h2 id="settingstitle">Beállítások</h2>
+  <div class="setgroup">
+    <div class="setrow"><span>Szigeti célpontok is</span>
+      <label class="switch"><input type="checkbox" id="islands" aria-label="Szigeti célpontok is"><span class="knob"></span></label></div>
+  </div>
+  <div class="setgroup">
+    <button class="setbtn" id="setloc"><span>Helyzet frissítése</span><span class="setval" id="setlocval">—</span></button>
+    <button class="setbtn" id="setinstall"><span>Telepítés a főképernyőre</span><span class="setval">›</span></button>
+  </div>
+  <div class="setgroup">
+    <div class="setrow"><span>Offline állapot</span><span class="setval" id="setoffline">—</span></div>
+  </div>
+  <div class="setabout">Adatok: Senj környéki nyilvános források.<br>Térkép: © OpenStreetMap, © CARTO.</div>
 </section>
 
 <!-- ===== ALSÓ NAVIGÁCIÓ ===== -->
@@ -95,13 +124,13 @@
     <svg viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zm0 0v14m6-12v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
     <span>Térkép</span>
   </button>
-  <button data-tab="coll">
-    <svg viewBox="0 0 24 24"><path d="M4 5h7v7H4zm9 0h7v7h-7zM4 14h7v6H4zm9 0h7v6h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-    <span>Gyűjtemények</span>
+  <button data-tab="terv">
+    <svg viewBox="0 0 24 24"><path d="M8 6h11M8 12h11M8 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4" cy="6" r="1.4" fill="currentColor"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/><circle cx="4" cy="18" r="1.4" fill="currentColor"/></svg>
+    <span>Útiterv</span>
   </button>
   <button data-tab="fav">
     <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.6-9.3-9A5.4 5.4 0 0 1 12 6.1 5.4 5.4 0 0 1 21.3 11C19 15.4 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-    <span>Kedvencek</span>
+    <span>Mentett</span>
   </button>
 </nav>
 
@@ -111,6 +140,6 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="app.js"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
