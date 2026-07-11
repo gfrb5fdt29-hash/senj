@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v20';
+const CACHE = 'senj-utikalauz-v21';
 const CACHE_PREFIX = 'senj-utikalauz-';
 const CORE = [
   './',
@@ -18,7 +18,7 @@ const CORE = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',
-  'images/senj-water-background.jpg',
+  'ocean.webp',
   'images/places/B-0001.webp',
   'images/places/B-0004.webp',
   'images/places/B-0011.webp',
