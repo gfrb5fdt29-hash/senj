@@ -16,7 +16,7 @@
 <link rel="preload" href="fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="poppins.css?v=1">
-<link rel="stylesheet" href="app.css?v=22">
+<link rel="stylesheet" href="app.css?v=24">
 </head>
 <body>
 
@@ -45,6 +45,13 @@
   </div>
 
   <div id="search-results" class="hidden"></div>
+</main>
+
+<!-- ===== KÖZELEMBEN ===== -->
+<main id="view-near" class="view">
+  <header class="top"><h1>Közelemben</h1></header>
+  <p class="nearintro">Kategóriánként a három legközelebbi hely a jelenlegi helyzetedhez mérve.</p>
+  <div id="nearbody"></div>
 </main>
 
 <!-- ===== LISTA (kategória / gyűjtemény) ===== -->
@@ -103,6 +110,10 @@
     <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
     <span>Böngésző</span>
   </button>
+  <button data-tab="near">
+    <svg viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="currentColor"/></svg>
+    <span>Közelemben</span>
+  </button>
   <button data-tab="terv">
     <svg viewBox="0 0 24 24"><path d="M8 6h11M8 12h11M8 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4" cy="6" r="1.4" fill="currentColor"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/><circle cx="4" cy="18" r="1.4" fill="currentColor"/></svg>
     <span>Tervező</span>
@@ -118,6 +129,6 @@
   <button id="installdismiss" aria-label="Bezárás">✕</button>
 </div>
 
-<script src="app.js?v=15"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>

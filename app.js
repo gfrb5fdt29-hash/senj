@@ -23,6 +23,7 @@ const PRAKT = { bolt:'Boltok', pekseg:'Pékségek', gyogyszertar:'Gyógyszertár
 const PROFIL = { pizza:'Pizza', grill:'Grill', teszta:'Tészta', helyi_konyha:'Helyi konyha', kave_desszert:'Kávé & desszert', gyors:'Gyors', tengeri:'Tengeri', etterem_altalanos:'Étterem' };
 const FACET = { vilagitotorony:'Világítótornyok', naplemente:'Naplemente', fotos_hely:'Fotós helyek' };
 const KEDVELT_PROFIL = ['pizza','grill','teszta','helyi_konyha'];
+const FALUSI_STRAND_ZONAK = ['sveti juraj','lukovo','klada','starigrad','bunica','vratarusa','ujca','planikovac','sibinj','smokvica','klenovica','povile','stinica','jablanac','cesarica','ribarica','metajna','karlobag','lopar','stara baska'];
 
 function readStoredArray(key) {
   try {
@@ -96,6 +97,17 @@ function isReco(p) {
   const top = (p.ertekeles?.cimkek || []).includes('top_rated') || (p.ertekeles?.cimkek || []).includes('well_rated');
   return (r != null && r >= 4.2) || top;
 }
+function publicTags(p) { return [...(p.cimkek_publikus || []), ...(p.cimkek || [])].map(norm); }
+function isCityBeach(p) { return p.kat === 'strand' && publicTags(p).includes('varosi strand'); }
+function isVillageBeach(p) {
+  return p.kat === 'strand' && (publicTags(p).includes('falusi strand') || FALUSI_STRAND_ZONAK.some(z => norm(p.zona).includes(z)));
+}
+function isCoveBeach(p) { return p.kat === 'strand' && publicTags(p).some(t => t.includes('obol')); }
+function isPhotoSpot(p) { return (p.facettak || []).some(f => f === 'fotos_hely' || f === 'vilagitotorony'); }
+function isLargeShopping(p) {
+  return p.praktikus_tipus === 'bolt' && (publicTags(p).includes('nagy bevasarlashoz') || /\b(lidl|plodine|spar|tommy|konzum)\b/.test(norm(p.nev)));
+}
+function isSmallShopping(p) { return p.praktikus_tipus === 'bolt' && !isLargeShopping(p); }
 function catIcon(p) {
   if (p.facettak?.includes('vilagitotorony')) return ICONS.torony;
   return ICONS[p.kat] || ICONS.praktikus;
@@ -138,6 +150,29 @@ function placeGridCard(p) {
   </button>`;
 }
 function sortByDist(arr) { return [...arr].sort((a, b) => (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9)); }
+function refreshPosition(showStatus = false) {
+  const setval = $('#setlocval');
+  if (!navigator.geolocation) {
+    if (showStatus && setval) setval.textContent = 'Nem elérhető';
+    renderNear();
+    return;
+  }
+  if (showStatus && setval) setval.textContent = 'Keresés…';
+  navigator.geolocation.getCurrentPosition(
+    g => {
+      pos = { lat: g.coords.latitude, lng: g.coords.longitude };
+      if (setval) setval.textContent = 'Bekapcsolva';
+      renderHome();
+      renderNear();
+      if (listState) renderList();
+    },
+    () => {
+      if (showStatus && setval) setval.textContent = 'Nem sikerült';
+      renderNear();
+    },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
+  );
+}
 
 /* ---------- FELFEDEZÉS ---------- */
 function renderHome() {
@@ -155,6 +190,24 @@ function renderHome() {
 
 }
 
+/* ---------- KÖZELEMBEN ---------- */
+function renderNear() {
+  const body = $('#nearbody');
+  if (!body) return;
+  if (!pos) {
+    body.innerHTML = `<section class="nearrequest"><b>Engedélyezd a helyzetedet</b><p>Így kategóriánként a valóban hozzád legközelebbi helyeket mutatom.</p><button class="btn" type="button" data-nearlocation>Helyzet frissítése</button></section>`;
+    return;
+  }
+  const vis = DATA.filter(p => visible(p) && p.lat != null);
+  body.innerHTML = Object.entries(CAT).map(([kat, cat]) => {
+    const places = sortByDist(vis.filter(p => p.kat === kat)).slice(0, 3);
+    return `<section class="nearsection">
+      <div class="nearhead"><span class="nearlabel"><i style="background:${cat.bg};color:${cat.szin}"><svg viewBox="0 0 24 24">${ICONS[kat]}</svg></i>${cat.nev}</span><small>${places.length} legközelebbi</small></div>
+      <div class="nearrows">${places.map(placeRow).join('') || '<div class="empty">Nincs térképponttal rendelkező hely.</div>'}</div>
+    </section>`;
+  }).join('');
+}
+
 /* ---------- LISTA nézet ---------- */
 function openList(state) {
   const source = document.querySelector('.bottomnav button.active')?.dataset.tab || 'home';
@@ -167,11 +220,11 @@ function listChipDefs() {
   if (s.tipus === 'cat' && s.cat === 'etterem')
     return [['mind','Mind'],['pizza','Pizza'],['grill','Grill'],['teszta','Tészta'],['helyi_konyha','Helyi konyha'],['kave_desszert','Kávé & desszert'],['reco','Neked ajánlott']];
   if (s.tipus === 'cat' && s.cat === 'praktikus')
-    return [['mind','Mind'], ...Object.entries(PRAKT)];
+    return [['mind','Mind'],['kis_bevasarlas','Kis bevásárlás'],['nagy_bevasarlas','Nagy bevásárlás'],['pekseg','Pékségek'],['gyogyszertar','Gyógyszertárak'],['benzinkut','Benzinkutak'],['piac','Piacok'],['egyeb','Termelői helyek']];
   if (s.tipus === 'cat' && s.cat === 'kilato_foto')
-    return [['mind','Mind'],['vilagitotorony','Világítótornyok'],['naplemente','Naplemente'],['fotos_hely','Fotós helyek']];
+    return [['mind','Mind'],['naplemente','Naplemente'],['fotos_hely','Fotós helyek']];
   if (s.tipus === 'cat' && s.cat === 'strand')
-    return [['mind','Mind'],['navig','Egy koppintás oda'],['csendes','Csendesebb']];
+    return [['mind','Mind'],['strand_varos','Városi strand'],['strand_falu','Falusi strand'],['strand_obol','Öböl']];
   return [['mind','Mind']];
 }
 function listItems() {
@@ -186,8 +239,12 @@ function listItems() {
   const c = s.chip;
   if (c && c !== 'mind') {
     if (c === 'reco') arr = arr.filter(isReco);
-    else if (c === 'navig') arr = arr.filter(p => p.lat != null);
-    else if (c === 'csendes') arr = arr.filter(p => p.ertekeles?.zsufoltsag === 'alacsony' || (p.ertekeles?.cimkek || []).some(t => t.startsWith('low_crowds')));
+    else if (c === 'strand_varos') arr = arr.filter(isCityBeach);
+    else if (c === 'strand_falu') arr = arr.filter(isVillageBeach);
+    else if (c === 'strand_obol') arr = arr.filter(isCoveBeach);
+    else if (c === 'kis_bevasarlas') arr = arr.filter(isSmallShopping);
+    else if (c === 'nagy_bevasarlas') arr = arr.filter(isLargeShopping);
+    else if (c === 'fotos_hely') arr = arr.filter(isPhotoSpot);
     else if (PRAKT[c]) arr = arr.filter(p => p.praktikus_tipus === c);
     else if (PROFIL[c]) arr = arr.filter(p => (p.etel_profil || []).includes(c));
     else arr = arr.filter(p => (p.facettak || []).includes(c));
@@ -684,6 +741,7 @@ function showView(v, keepTab) {
 function renderTab(t) {
   hideSheet();
   showView(t);
+  if (t === 'near') renderNear();
   if (t === 'fav') renderFavs();
   if (t === 'terv') renderTerv();
   if (t === 'home') renderHome();
@@ -691,7 +749,7 @@ function renderTab(t) {
 function cleanNavState(state) {
   let s;
   try { s = JSON.parse(JSON.stringify(state || {})); } catch (err) { s = {}; }
-  if (!['home','terv','fav','list'].includes(s.screen)) s = { screen: 'home' };
+  if (!['home','near','terv','fav','list'].includes(s.screen)) s = { screen: 'home' };
   if (s.screen === 'list' && !s.list) s = { screen: 'home' };
   if (s.sheetId && !DATA.some(p => p.id === s.sheetId)) {
     return cleanNavState(s.underlay || { screen: s.screen, list: s.list });
@@ -757,7 +815,7 @@ function navigateTo(state, { preserveCurrent = true } = {}) {
   applyNavState(clean);
 }
 function showTab(t) {
-  if (!['home','terv','fav'].includes(t)) return;
+  if (!['home','near','terv','fav'].includes(t)) return;
   navEpoch += 1;
   navDepth = 0;
   const next = { screen: t, scrollY: 0 };
@@ -802,6 +860,7 @@ document.addEventListener('click', e => {
   if (nav) return showTab(nav.dataset.tab);
   const goto = e.target.closest('[data-goto]');
   if (goto) return showTab(goto.dataset.goto);
+  if (e.target.closest('[data-nearlocation]')) return refreshPosition(true);
   const cat = e.target.closest('[data-cat]');
   if (cat) return openList({ tipus: 'cat', cat: cat.dataset.cat, cim: CAT[cat.dataset.cat].nev });
   const coll = e.target.closest('[data-coll]');
@@ -905,18 +964,7 @@ function closeSettings() {
 }
 $('#opensettings').onclick = e => openSettings(e.currentTarget);
 $('#settingsback').onclick = closeSettings;
-$('#setloc').onclick = () => {
-  $('#setlocval').textContent = 'Keresés…';
-  navigator.geolocation?.getCurrentPosition(
-    g => {
-      pos = { lat: g.coords.latitude, lng: g.coords.longitude };
-      $('#setlocval').textContent = 'Bekapcsolva';
-      renderHome(); if (listState) renderList();
-    },
-    () => { $('#setlocval').textContent = 'Nem sikerült'; },
-    { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
-  );
-};
+$('#setloc').onclick = () => refreshPosition(true);
 $('#setinstall').onclick = () => { closeSettings(); localStorage.removeItem('senj_tip_ok'); $('#installtip').classList.remove('hidden'); };
 
 window.addEventListener('scroll', () => {
@@ -944,15 +992,7 @@ async function boot() {
     return;
   }
   initNavigation();
-  navigator.geolocation?.getCurrentPosition(
-    g => {
-      pos = { lat: g.coords.latitude, lng: g.coords.longitude };
-      renderHome();
-      if (currentNavState?.search) runSearch(currentNavState.search);
-      if (listState) renderList();
-    },
-    () => {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
-  );
+  refreshPosition();
 }
 boot();
 

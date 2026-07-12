@@ -279,6 +279,10 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 #view-list .place,#view-fav .place{background:transparent!important}
 #view-list .empty,#view-fav .empty{color:var(--muted)}
 
+/* ---------- Közelemben ---------- */
+.nearintro{margin:0;padding:2px 18px 7px;color:#fff;font-size:13px;line-height:1.5;text-shadow:0 1px 5px rgba(1,20,40,.42)}
+#nearbody{padding:0 18px 20px}.nearsection{margin:16px 0 22px}.nearhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 1px 9px;color:#fff}.nearlabel{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}.nearlabel i{width:31px;height:31px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}.nearlabel svg{width:18px;height:18px}.nearhead small{color:rgba(255,255,255,.78);font-size:11px}.nearrows{display:flex;flex-direction:column;gap:10px}.nearrows .place{width:100%!important;margin:0!important;border:1px solid rgba(255,255,255,.54)!important;border-radius:17px;overflow:hidden}.nearrequest{margin:12px 18px 22px;padding:16px;border:1px solid rgba(255,255,255,.54);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(81,145,158,.5),rgba(34,80,106,.43));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 7px 18px rgba(1,35,57,.17);backdrop-filter:blur(20px) saturate(108%);-webkit-backdrop-filter:blur(20px) saturate(108%)}.nearrequest b{font-size:16px}.nearrequest p{margin:5px 0 13px;color:rgba(255,255,255,.82);font-size:13px;line-height:1.5}.nearrequest .btn{width:100%}
+
 /* ---------- beállítások ---------- */
 #settings h2{margin:2px 0 8px;font-size:20px;font-weight:700;color:var(--navy)}
 .setgroup{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -573,6 +577,24 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(1,35,57,.09),0 7px 18px rgba(1,35,57,.17)!important;
   backdrop-filter:blur(20px) saturate(106%);-webkit-backdrop-filter:blur(20px) saturate(106%);
 }
+
+/* ---------- egységes gyűjtemény-üveg minden kártyán ---------- */
+.cat-strand,.catcard[data-cat="strand"]{--planner-hi:rgba(96,157,166,.52);--planner-low:rgba(38,98,117,.43)}
+.cat-kilato_foto,.catcard[data-cat="kilato_foto"]{--planner-hi:rgba(159,154,140,.5);--planner-low:rgba(101,98,94,.43)}
+.cat-etterem,.catcard[data-cat="etterem"]{--planner-hi:rgba(165,148,149,.5);--planner-low:rgba(101,101,119,.43)}
+.cat-praktikus,.catcard[data-cat="praktikus"]{--planner-hi:rgba(139,147,169,.5);--planner-low:rgba(76,94,126,.43)}
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheetplanchoices,.sheet .favbtn,.btn){
+  border-color:rgba(255,255,255,.54)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(1,35,57,.09),0 7px 18px rgba(1,35,57,.17)!important;
+  backdrop-filter:blur(20px) saturate(108%);-webkit-backdrop-filter:blur(20px) saturate(108%);
+}
+:where(.catcard,.recocard,.place,.placegridcard){
+  background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.04)),linear-gradient(135deg,var(--planner-hi,var(--planner-base-hi)),var(--planner-low,var(--planner-base-low)))!important;
+}
+:where(.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheetplanchoices,.sheet .favbtn,.btn){
+  background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(81,145,158,.5),rgba(34,80,106,.43))!important;
+}
+.tervremove{background:rgba(19,69,94,.42)!important;border-color:rgba(255,255,255,.42)!important}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
