@@ -154,19 +154,6 @@ function renderHome() {
       <span class="cic" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${c.ic}</svg></span>
       <b>${c.cim}</b><span class="sub">${vis.filter(c.szuro).length} hely</span></button>`).join('');
 
-  const reco = sortByDist(vis.filter(isReco)).sort((a, b) => (b.ertekeles?.rating?.value ?? 0) - (a.ertekeles?.rating?.value ?? 0)).slice(0, 10);
-  $('#reco').innerHTML = reco.map(p => {
-    const r = p.ertekeles?.rating;
-    return `<button class="recocard cat-${p.kat}" data-id="${p.id}">
-      <b>${esc(p.nev)}</b>
-      <span class="sub">${esc(p.zona)} · ${kmTxt(distOf(p))}</span>
-      <span class="sub" style="color:var(--amber)">${r?.value ? `★ ${r.value}` : ''}${r?.count ? ` · ${r.count} vélemény` : ''}</span>
-      <span class="sub">${(p.etel_profil || []).filter(x => x !== 'etterem_altalanos').map(x => PROFIL[x]).join(' · ')}</span>
-    </button>`;
-  }).join('') || '<div class="empty" style="min-width:100%">Nincs elérhető ajánlat.</div>';
-
-  $('#nearhint').textContent = pos ? 'a jelenlegi helyedtől' : 'Senj központjától';
-  renderRows($('#nearlist'), sortByDist(vis.filter(p => p.lat != null)).slice(0, 6));
 }
 
 /* ---------- LISTA nézet ---------- */
