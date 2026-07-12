@@ -224,9 +224,10 @@ function renderHome() {
   const vis = DATA.filter(visible);
   $('#catgrid').innerHTML = Object.entries(CAT).map(([k, c]) => {
     const n = vis.filter(p => p.kat === k).length;
-    return `<button class="catcard" data-cat="${k}">
+    return `<button class="catcard" data-cat="${k}" style="background-image:url('images/categories/${k}.webp')">
+      <span class="catcard-scrim"></span>
       <span class="cic" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></span>
-      <b>${c.nev}</b><span>${n} hely</span></button>`;
+      <span class="catcard-copy"><b>${c.nev}</b><span>${n} hely</span></span></button>`;
   }).join('');
 
 
