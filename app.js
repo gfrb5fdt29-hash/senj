@@ -19,7 +19,7 @@ const ICONS = {
   csend: '<path d="M12 3a7 7 0 0 0-7 7c0 4 3 7.5 7 11 4-3.5 7-7 7-11a7 7 0 0 0-7-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 10.5c.7 1 1.5 1.5 2.5 1.5s1.8-.5 2.5-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   reco: '<path d="M12 3l2.5 5.4 5.9.7-4.4 4 1.2 5.9L12 16l-5.2 3 1.2-5.9-4.4-4 5.9-.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
 };
-const PRAKT = { bolt:'Boltok', pekseg:'Pékségek', gyogyszertar:'Gyógyszertárak', benzinkut:'Benzinkutak', piac:'Piacok', egyeb:'Termelői helyek' };
+const PRAKT = { bolt:'Boltok', pekseg:'Pékségek', gyogyszertar:'Gyógyszertár', drogeria:'Drogéria', benzinkut:'Benzinkutak', piac:'Piacok', egyeb:'Termelői helyek' };
 const PROFIL = { pizza:'Pizza', grill:'Grill', teszta:'Tészta', helyi_konyha:'Helyi konyha', kave_desszert:'Kávé & desszert', gyors:'Gyors', tengeri:'Tengeri', etterem_altalanos:'Étterem' };
 const FACET = { vilagitotorony:'Világítótornyok', naplemente:'Naplemente', fotos_hely:'Fotós helyek' };
 const KEDVELT_PROFIL = ['pizza','grill','teszta','helyi_konyha'];
@@ -125,7 +125,7 @@ function placeLabels(p) {
   if (p.kat === 'praktikus') {
     const type = p.praktikus_tipus === 'bolt'
       ? (isLargeShopping(p) ? 'Nagy bevásárlás' : 'Kis bevásárlás')
-      : ({ pekseg:'Pékség', gyogyszertar:'Gyógyszertár', benzinkut:'Benzinkút', piac:'Piac', egyeb:'Helyi termékek' }[p.praktikus_tipus] || 'Praktikus hely');
+      : ({ pekseg:'Pékség', gyogyszertar:'Gyógyszertár', drogeria:'Drogéria', benzinkut:'Benzinkút', piac:'Piac', egyeb:'Helyi termékek' }[p.praktikus_tipus] || 'Praktikus hely');
     const extras = (p.cimkek_publikus || []).filter(tag => {
       const t = norm(tag);
       return !['kisbolt','gyors bevasarlas','nagy bevasarlashoz','bevasarlas','gyogyszertar','pekseg','benzinkut','piac'].includes(t);
@@ -164,8 +164,19 @@ function catIcon(p) {
   if (p.facettak?.includes('vilagitotorony')) return ICONS.torony;
   return ICONS[p.kat] || ICONS.praktikus;
 }
+const PRAKT_TIPUS_KEP = { pekseg: 'images/categories/pekseg.webp', gyogyszertar: 'images/categories/pill.webp' };
+function praktikusKep(p) {
+  const nev = norm(p.nev);
+  let src = 'images/categories/bolt.webp';
+  if (/\bdm\b/.test(nev)) src = 'images/categories/dm.webp';
+  else if (/\bbipa\b/.test(nev)) src = 'images/categories/bipa.webp';
+  else if (PRAKT_TIPUS_KEP[p.praktikus_tipus]) src = PRAKT_TIPUS_KEP[p.praktikus_tipus];
+  return { borito: src, belyegkep: src, alt_hu: p.nev };
+}
 function imageOf(p) {
-  if (p.kat === 'etterem' || !p.kepek?.borito) return null;
+  if (p.kat === 'etterem') return null;
+  if (p.kat === 'praktikus') return praktikusKep(p);
+  if (!p.kepek?.borito) return null;
   return p.kepek;
 }
 
@@ -263,7 +274,7 @@ function listChipDefs() {
   if (s.tipus === 'cat' && s.cat === 'etterem')
     return [['mind','Mind'],['pizza','Pizza'],['grill','Grill'],['teszta','Tészta'],['helyi_konyha','Helyi konyha'],['kave_desszert','Kávé & desszert'],['reco','Neked ajánlott']];
   if (s.tipus === 'cat' && s.cat === 'praktikus')
-    return [['mind','Mind'],['kis_bevasarlas','Kis bevásárlás'],['nagy_bevasarlas','Nagy bevásárlás'],['pekseg','Pékségek'],['gyogyszertar','Gyógyszertárak'],['benzinkut','Benzinkutak'],['piac','Piacok'],['egyeb','Termelői helyek']];
+    return [['mind','Mind'],['kis_bevasarlas','Kis bevásárlás'],['nagy_bevasarlas','Nagy bevásárlás'],['pekseg','Pékségek'],['gyogyszertar','Gyógyszertár'],['drogeria','Drogéria'],['benzinkut','Benzinkutak'],['piac','Piacok'],['egyeb','Termelői helyek']];
   if (s.tipus === 'cat' && s.cat === 'kilato_foto')
     return [['mind','Mind'],['naplemente','Naplemente'],['fotos_hely','Fotós helyek']];
   if (s.tipus === 'cat' && s.cat === 'strand')
@@ -272,7 +283,7 @@ function listChipDefs() {
 }
 function listItems() {
   const s = listState;
-  if (s.tipus === 'terv') { return tervStops(tervFolyoso(s), s.seed || 0, true); }
+  if (s.tipus === 'terv') { return tervStopsFor(s.nap); }
   let arr = DATA.filter(visible);
   if (s.tipus === 'cat') arr = arr.filter(p => p.kat === s.cat);
   if (s.tipus === 'coll') {
@@ -329,203 +340,60 @@ const COLLS = [
 ];
 
 /* ---------- ÚTITERV (napi tervező) ---------- */
-let tervPace = localStorage.getItem('senj_terv_pace') || 'laza';
-let tervHeat = localStorage.getItem('senj_terv_heat') === '1';
-let tervSeeds = {};
-try { tervSeeds = JSON.parse(localStorage.getItem('senj_terv_seeds') || '{}') || {}; } catch (e) { tervSeeds = {}; }
-let tervSavedDays = readStoredObject('senj_terv_custom_days');
-let tervDraftDays = {};
-const FOLYOSO = {
-  eszak:   { cim:'Északi part',            sub:'Senjtől Sveti Jurajig — strandok, kikötők', ic:ICONS.strand },
-  helyben: { cim:'Senj városnap',          sub:'Óváros, Nehaj, a Draga-öblök',              ic:ICONS.torony },
-  del:     { cim:'Déli part & Velebit-láb', sub:'Jablanac, Zavratnica, rejtett öblök',       ic:ICONS.foto },
-  hegy:    { cim:'Velebit & hegyi nap',    sub:'Vratnik, Zavížan, panorámák',               ic:ICONS.kilato_foto },
-};
-const FOLYOSO_SORREND = ['eszak', 'helyben', 'del', 'hegy'];
-const NAPSZAK_RANK = { reggel:1, delelott:2, delelot:2, delutan:3, keso_delutan:4, naplemente:5, este:6 };
-function napszakRank(p) {
-  let best = 9;
-  for (const x of (p.tervezes?.legjobb_napszak || [])) { const r = NAPSZAK_RANK[norm(x)]; if (r && r < best) best = r; }
-  return best;
+const NAPOK = ['hetfo', 'kedd', 'szerda', 'csutortok'];
+const NAP_CIM = { hetfo: 'Hétfő', kedd: 'Kedd', szerda: 'Szerda', csutortok: 'Csütörtök' };
+let tervDays = readStoredObject('senj_terv_days');
+for (const nap of NAPOK) if (!Array.isArray(tervDays[nap])) tervDays[nap] = [];
+function persistTervDays() {
+  try { localStorage.setItem('senj_terv_days', JSON.stringify(tervDays)); } catch (err) {}
 }
-const PRAKT_RANK = { bolt: 1, pekseg: 2, piac: 3, egyeb: 4, benzinkut: 5, gyogyszertar: 6 };
-function rngFrom(seed) {
-  let s = (seed >>> 0) || 1;
-  return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
-function expWeight(p) {
-  let w = 8 - Math.min(napszakRank(p), 6);          // jobb napszak → nagyobb súly
-  w += Math.max(0, 4 - (p.tervezes?.prioritas ?? 3)); // magas prioritás → +
-  if (tervHeat && p.tervezes?.hosegben_ajanlott) w += 3;
-  return Math.max(1, w);
-}
-function weightedSample(items, n, rnd) {
-  const pool = items.map(it => ({ it, w: expWeight(it) }));
-  const out = [];
-  while (out.length < n && pool.length) {
-    let total = pool.reduce((s, x) => s + x.w, 0), r = rnd() * total, i = 0;
-    for (; i < pool.length; i++) { r -= pool[i].w; if (r <= 0) break; }
-    i = Math.min(i, pool.length - 1);
-    out.push(pool[i].it); pool.splice(i, 1);
-  }
-  return out;
-}
-function napszakSort(a, b) {
-  const na = napszakRank(a), nb = napszakRank(b);
-  if (na !== nb) return na - nb;
-  return (a.tervezes?.prioritas ?? 9) - (b.tervezes?.prioritas ?? 9);
-}
-// Egy nap állomásai adott folyosóra és seedre. seed 0 = determinisztikus „legjobb nap",
-// seed > 0 = súlyozott véletlen változat (a must-see helyekre húzva). Azonos seed → azonos nap.
-function composeDay(f, seed) {
-  const inF = DATA.filter(p => p.tervezes?.kiemelt && visible(p) && p.tervezes?.utvonal_folyoso === f);
-  const exp = inF.filter(p => p.kat === 'strand' || p.kat === 'kilato_foto');
-  if (exp.length < 2) return [];
-  const n = tervPace === 'porgos' ? 6 : 4;
-  const fi = FOLYOSO_SORREND.indexOf(f) + 1;
-  let chosen;
-  if (!seed) {
-    chosen = exp.slice().sort((a, b) => {
-      const na = napszakRank(a), nb = napszakRank(b); if (na !== nb) return na - nb;
-      if (tervHeat) { const ha = a.tervezes?.hosegben_ajanlott ? 0 : 1, hb = b.tervezes?.hosegben_ajanlott ? 0 : 1; if (ha !== hb) return ha - hb; }
-      const pa = a.tervezes?.prioritas ?? 9, pb = b.tervezes?.prioritas ?? 9; if (pa !== pb) return pa - pb;
-      return (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9);
-    }).slice(0, n);
-  } else {
-    chosen = weightedSample(exp, n, rngFrom(seed * 2654435761 + fi * 97)).sort(napszakSort);
-  }
-  const rnd2 = rngFrom((seed + 1) * 40503 + fi * 13);
-  const rests = inF.filter(p => p.kat === 'etterem').sort((a, b) => napszakRank(a) - napszakRank(b));
-  const dinner = rests.length ? (seed ? rests[Math.floor(rnd2() * rests.length)] : rests[0]) : null;
-  const prakts = inF.filter(p => p.kat === 'praktikus').sort((a, b) => (PRAKT_RANK[a.praktikus_tipus] ?? 9) - (PRAKT_RANK[b.praktikus_tipus] ?? 9));
-  const prakt = prakts.length ? (seed ? prakts[Math.floor(rnd2() * Math.min(2, prakts.length))] : prakts[0]) : null;
-  return [...chosen, dinner, prakt].filter(Boolean);
-}
-function tervFolyoso(state) {
-  return state?.f || state?.terv?.replace('nap-', '') || '';
-}
-function hasSavedTervDay(f) {
-  return Array.isArray(tervSavedDays[f]?.stopIds);
-}
-function hasTervDraft(f) {
-  return Object.prototype.hasOwnProperty.call(tervDraftDays, f);
-}
-function orderedTervStops(stops) {
-  const unique = [];
-  const seen = new Set();
-  for (const p of stops) if (p && !seen.has(p.id)) { seen.add(p.id); unique.push(p); }
-  const elmenyek = unique.filter(p => p.kat === 'strand' || p.kat === 'kilato_foto').sort(napszakSort);
-  const etteremek = unique.filter(p => p.kat === 'etterem').sort(napszakSort);
-  const praktikusak = unique.filter(p => p.kat === 'praktikus')
-    .sort((a, b) => (PRAKT_RANK[a.praktikus_tipus] ?? 9) - (PRAKT_RANK[b.praktikus_tipus] ?? 9));
-  return [...elmenyek, ...etteremek, ...praktikusak];
-}
-function placesFromTervIds(ids) {
+function tervStopsFor(nap) {
   const byId = new Map(DATA.map(p => [p.id, p]));
-  return orderedTervStops((ids || []).map(id => byId.get(id)).filter(p => p && visible(p)));
+  return (tervDays[nap] || []).map(id => byId.get(id)).filter(p => p && visible(p));
 }
-function tervStops(f, seed, includeDraft = false) {
-  const ids = includeDraft && hasTervDraft(f) ? tervDraftDays[f] :
-    (hasSavedTervDay(f) ? tervSavedDays[f].stopIds : null);
-  return ids ? placesFromTervIds(ids) : composeDay(f, seed);
+function toggleTervDay(nap, id) {
+  const arr = tervDays[nap];
+  const i = arr.indexOf(id);
+  if (i === -1) arr.push(id); else arr.splice(i, 1);
+  persistTervDays();
 }
-function setTervDraft(f, seed, ids) {
-  tervDraftDays[f] = [...new Set(ids || tervStops(f, seed, true).map(p => p.id))];
+function removeTervStop(nap, id) {
+  tervDays[nap] = tervDays[nap].filter(x => x !== id);
+  persistTervDays();
 }
-function addTervStop(f, seed, id) {
-  const ids = tervStops(f, seed, true).map(p => p.id);
-  if (!ids.includes(id)) ids.push(id);
-  setTervDraft(f, seed, ids);
-}
-function addPlaceToTerv(f, id) {
-  const seed = tervSeeds[f] || 0;
-  const ids = tervStops(f, seed, true).map(p => p.id);
-  if (ids.includes(id)) return false;
-  ids.push(id);
-  tervSavedDays[f] = { stopIds: ids };
-  delete tervDraftDays[f];
-  persistSavedTervDays();
-  return true;
-}
-function removeTervStop(f, seed, id) {
-  setTervDraft(f, seed, tervStops(f, seed, true).map(p => p.id).filter(x => x !== id));
-}
-function persistSavedTervDays() {
-  try { localStorage.setItem('senj_terv_custom_days', JSON.stringify(tervSavedDays)); } catch (err) {}
-}
-function saveTervDay(f, seed) {
-  tervSavedDays[f] = { stopIds: tervStops(f, seed, true).map(p => p.id) };
-  delete tervDraftDays[f];
-  persistSavedTervDays();
-}
-function resetTervDay(f) {
-  delete tervDraftDays[f];
-  delete tervSavedDays[f];
-  persistSavedTervDays();
-}
-function buildDays() {
-  const days = [];
-  for (const f of FOLYOSO_SORREND) {
-    const seed = tervSeeds[f] || 0;
-    const sajat = hasSavedTervDay(f);
-    const stops = tervStops(f, seed);
-    if (!stops.length && !sajat) continue;
-    days.push({ id: 'nap-' + f, f, seed, cim: FOLYOSO[f].cim, sub: FOLYOSO[f].sub, ic: FOLYOSO[f].ic, stops, sajat });
-  }
-  return days;
-}
-function dayCardHTML(day) {
-  const perc = day.stops.reduce((s, p) => s + (p.tervezes?.latogatasi_ido_perc || 0), 0);
-  const idol = perc ? ` · ~${idoTxt(perc)} program` : '';
-  const ic = day.stops.slice(0, 6).map(p =>
+function dayCardHTML(nap) {
+  const stops = tervStopsFor(nap);
+  const perc = stops.reduce((s, p) => s + (p.tervezes?.latogatasi_ido_perc || 0), 0);
+  const idol = perc ? ` · ~${idoTxt(perc)}` : '';
+  const ic = stops.slice(0, 6).map(p =>
     `<span class="tstopic" style="color:${CAT[p.kat].szin};background:${CAT[p.kat].bg}"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`).join('');
-  const labels = [...new Set(day.stops.map(p => CAT[p.kat]?.nev).filter(Boolean))].slice(0, 3);
-  return `<button class="daycard" data-terv="${day.id}">
-    <div class="dayhead"><span class="dayic"><svg viewBox="0 0 24 24">${day.ic}</svg></span>
-      <span class="daytitle"><b>${esc(day.cim)}</b><span class="sub">${day.sajat ? 'Saját összeállítás · ' : ''}${esc(day.sub)}</span></span></div>
-    <div class="daystops">${ic}</div>${labels.length ? `<span class="daytags">${labels.map(label => `<i>${esc(label)}</i>`).join('')}</span>` : ''}
-    <div class="daymeta">${day.sajat ? 'Saját nap · ' : ''}${day.stops.length} állomás${idol}</div>
+  return `<button class="daycard" data-terv="${nap}">
+    <div class="dayhead"><span class="daytitle"><b>${NAP_CIM[nap]}</b></span></div>
+    ${stops.length ? `<div class="daystops">${ic}</div>` : ''}
+    <div class="daymeta">${stops.length ? `${stops.length} hely${idol}` : 'Még nincs hozzáadva semmi'}</div>
   </button>`;
 }
 function renderTerv() {
-  $('#tervctrl').innerHTML =
-    `<div class="tervrow"><span>Tempó</span>
-      <div class="seg">
-        <button class="segbtn ${tervPace === 'laza' ? 'on' : ''}" data-pace="laza">Laza</button>
-        <button class="segbtn ${tervPace === 'porgos' ? 'on' : ''}" data-pace="porgos">Pörgős</button>
-      </div></div>
-    <div class="tervrow"><span>Hőségbarát nap</span>
-      <label class="switch"><input type="checkbox" id="tervheat"${tervHeat ? ' checked' : ''} aria-label="Hőségbarát nap"><span class="knob"></span></label></div>`;
-  const th = $('#tervheat');
-  if (th) th.onchange = e => { tervHeat = e.target.checked; localStorage.setItem('senj_terv_heat', tervHeat ? '1' : '0'); renderTerv(); };
-  const days = buildDays();
-  $('#tervbody').innerHTML = days.map(dayCardHTML).join('') ||
-    '<div class="empty">Most nincs ajánlható nap.<br>A beállításokban a „Szigeti célpontok is" bekapcsolása bővíti a kínálatot.</div>';
+  $('#tervbody').innerHTML = NAPOK.map(dayCardHTML).join('');
 }
-function tervStopRow(p) {
+function tervStopRow(p, nap) {
   return `<div class="tervstop">${placeRow(p)}
-    <button class="tervremove" type="button" data-tervremove="${esc(p.id)}" aria-label="${esc(p.nev)} eltávolítása a napból">−</button></div>`;
+    <button class="tervremove" type="button" data-tervremove="${esc(p.id)}" data-tervremoveday="${nap}" aria-label="${esc(p.nev)} eltávolítása erről a napról">−</button></div>`;
 }
-function tervFavAdder(stops) {
+function tervFavAdder(nap, stops) {
   const ids = new Set(stops.map(p => p.id));
   const available = sortByDist(DATA.filter(p => favs.has(p.id) && visible(p) && !ids.has(p.id)));
   if (!available.length) return `<section class="tervfavs"><b>Mentett helyek</b><p>Nincs hozzáadható mentett hely. A Böngészőben az adatlap szív gombjával ments helyeket.</p></section>`;
   return `<details class="tervfavs"><summary>Mentett hely hozzáadása (${available.length})</summary><div class="tervfavlist">${available.map(p =>
-    `<button type="button" class="tervfav" data-tervadd="${esc(p.id)}"><span><b>${esc(p.nev)}</b><small>${esc(p.zona)}</small>${placeTags(p)}</span><i>+</i></button>`).join('')}</div></details>`;
+    `<button type="button" class="tervfav" data-tervadd="${esc(p.id)}" data-tervaddday="${nap}"><span><b>${esc(p.nev)}</b><small>${esc(p.zona)}</small>${placeTags(p)}</span><i>+</i></button>`).join('')}</div></details>`;
 }
 function renderTervList() {
-  const f = tervFolyoso(listState);
-  const seed = listState.seed || 0;
-  const stops = listItems();
-  const saved = hasSavedTervDay(f), draft = hasTervDraft(f);
-  $('#listchips').innerHTML =
-    `${!saved && !draft ? '<button class="chip shuffle" data-shuffle="1">↻ Másik változat</button>' : ''}
-     <button class="chip ${saved && !draft ? 'on' : ''}" data-tervsave="1">${saved ? 'Saját nap frissítése' : 'Saját nap mentése'}</button>
-     ${saved || draft ? '<button class="chip" data-tervreset="1">Ajánlott nap visszaállítása</button>' : ''}`;
-  const note = draft ? 'Nem mentett módosítások' : (saved ? 'Saját, mentett összeállítás' : 'Ajánlott nap — alakítsd kedvedre');
-  $('#listbody').innerHTML = `<div class="tervnote">${note}</div>` +
-    (stops.length ? stops.map(tervStopRow).join('') : '<div class="empty">Nincs állomás ezen a napon. Állítsd vissza az ajánlott napot, vagy adj hozzá mentett helyet.</div>') +
-    tervFavAdder(stops);
+  const nap = listState.nap;
+  const stops = tervStopsFor(nap);
+  $('#listchips').innerHTML = '';
+  $('#listbody').innerHTML =
+    (stops.length ? stops.map(p => tervStopRow(p, nap)).join('') : '<div class="empty">Nincs még hely ezen a napon. Keress rá valamire, vagy nyisd meg a Gyűjtőt, és onnan add hozzá.</div>') +
+    tervFavAdder(nap, stops);
 }
 
 /* ---------- KEDVENCEK ---------- */
@@ -663,10 +531,10 @@ function renderSheet(id) {
   if (tags.length) html += `<div class="tagrow">${tags.map(esc).join(' · ')}</div>`;
 
   const navUrl = p.utvonal_url || p.kereses_url;
-  const tervChoices = FOLYOSO_SORREND.map(f => {
-    const day = FOLYOSO[f];
-    return `<button type="button" class="sheetplanchoice" data-sheettervadd="${f}" data-place="${esc(p.id)}">
-      <span>${esc(day.cim)}</span><small>${esc(day.sub)}</small><i>+</i></button>`;
+  const tervChoices = NAPOK.map(nap => {
+    const on = tervDays[nap].includes(p.id);
+    return `<button type="button" class="sheetplanchoice ${on ? 'on' : ''}" data-sheettervadd="${nap}">
+      <span>${NAP_CIM[nap]}</span><i>${on ? '✓' : '+'}</i></button>`;
   }).join('');
   html += `<div class="actions">
     <a class="btn" href="${navUrl}" target="_blank" rel="noopener">
@@ -918,47 +786,32 @@ document.addEventListener('click', e => {
   const coll = e.target.closest('[data-coll]');
   if (coll) { const c = COLLS.find(x => x.id === coll.dataset.coll); return openList({ tipus: 'coll', coll: c.id, cim: c.cim }); }
   const terv = e.target.closest('[data-terv]');
-  if (terv) { const day = buildDays().find(x => x.id === terv.dataset.terv); return openList({ tipus: 'terv', terv: terv.dataset.terv, seed: day ? day.seed : 0, cim: day ? day.cim : 'Nap' }); }
+  if (terv) return openList({ tipus: 'terv', nap: terv.dataset.terv, cim: NAP_CIM[terv.dataset.terv] });
   const tervRemove = e.target.closest('[data-tervremove]');
   if (tervRemove && listState?.tipus === 'terv') {
-    removeTervStop(tervFolyoso(listState), listState.seed || 0, tervRemove.dataset.tervremove);
-    renderTervList(); saveCurrentNav(); return;
+    removeTervStop(tervRemove.dataset.tervremoveday, tervRemove.dataset.tervremove);
+    renderTervList(); renderTerv(); saveCurrentNav(); return;
   }
   const tervAdd = e.target.closest('[data-tervadd]');
   if (tervAdd && listState?.tipus === 'terv') {
-    addTervStop(tervFolyoso(listState), listState.seed || 0, tervAdd.dataset.tervadd);
-    renderTervList(); saveCurrentNav(); return;
+    toggleTervDay(tervAdd.dataset.tervaddday, tervAdd.dataset.tervadd);
+    renderTervList(); renderTerv(); saveCurrentNav(); return;
   }
   const sheetTervAdd = e.target.closest('[data-sheettervadd]');
   if (sheetTervAdd) {
-    const added = addPlaceToTerv(sheetTervAdd.dataset.sheettervadd, sheetTervAdd.dataset.place);
+    const nap = sheetTervAdd.dataset.sheettervadd;
+    const wasOn = tervDays[nap].includes(currentSheetId);
+    toggleTervDay(nap, currentSheetId);
+    sheetTervAdd.classList.toggle('on', !wasOn);
+    const icon = sheetTervAdd.querySelector('i');
+    if (icon) icon.textContent = wasOn ? '+' : '✓';
     const status = $('#sheetplanstatus');
-    const day = FOLYOSO[sheetTervAdd.dataset.sheettervadd];
-    if (status && day) status.textContent = added ? `${day.cim}: hozzáadva a Tervezőhöz.` : 'Ez a hely már ezen a napon van.';
+    if (status) status.textContent = wasOn ? `${NAP_CIM[nap]}: eltávolítva.` : `${NAP_CIM[nap]}: hozzáadva.`;
+    if (listState?.tipus === 'terv') renderTervList();
     renderTerv();
     saveCurrentNav();
     return;
   }
-  const tervSave = e.target.closest('[data-tervsave]');
-  if (tervSave && listState?.tipus === 'terv') {
-    saveTervDay(tervFolyoso(listState), listState.seed || 0);
-    renderTervList(); renderTerv(); saveCurrentNav(); return;
-  }
-  const tervReset = e.target.closest('[data-tervreset]');
-  if (tervReset && listState?.tipus === 'terv') {
-    resetTervDay(tervFolyoso(listState));
-    renderTervList(); renderTerv(); saveCurrentNav(); return;
-  }
-  const shuf = e.target.closest('[data-shuffle]');
-  if (shuf && listState?.tipus === 'terv') {
-    const f = listState.terv.replace('nap-', '');
-    const ns = (listState.seed || 0) + 1;
-    listState.seed = ns; tervSeeds[f] = ns;
-    try { localStorage.setItem('senj_terv_seeds', JSON.stringify(tervSeeds)); } catch (err) {}
-    renderList(); saveCurrentNav(); return;
-  }
-  const pace = e.target.closest('[data-pace]');
-  if (pace) { tervPace = pace.dataset.pace; localStorage.setItem('senj_terv_pace', tervPace); renderTerv(); return; }
   const chip = e.target.closest('[data-chip]');
   if (chip) { listState.chip = chip.dataset.chip; renderList(); saveCurrentNav(); return; }
   const pl = e.target.closest('[data-id]');
