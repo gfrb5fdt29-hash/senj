@@ -108,18 +108,19 @@ function isLargeShopping(p) {
   return p.praktikus_tipus === 'bolt' && (publicTags(p).includes('nagy bevasarlashoz') || /\b(lidl|plodine|spar|tommy|konzum)\b/.test(norm(p.nev)));
 }
 function isSmallShopping(p) { return p.praktikus_tipus === 'bolt' && !isLargeShopping(p); }
-function gridLabels(p) {
+function placeLabels(p) {
+  const add = (labels, label) => { if (label && !labels.includes(label)) labels.push(label); };
   if (p.kat === 'etterem') {
     const profiles = new Set(p.etel_profil || []);
     const raw = publicTags(p);
     const labels = [];
-    if (profiles.has('grill')) labels.push('Grill');
-    if (raw.some(t => t.includes('husos etelek'))) labels.push('Húsos ételek');
+    if (profiles.has('grill')) add(labels, 'Grill');
+    if (raw.some(t => t.includes('husos etelek'))) add(labels, 'Húsos ételek');
     for (const [key, label] of [['pizza','Pizza'],['teszta','Tészta'],['helyi_konyha','Helyi konyha'],['tengeri','Tengeri'],['kave_desszert','Kávé & desszert']]) {
-      if (profiles.has(key)) labels.push(label);
+      if (profiles.has(key)) add(labels, label);
     }
-    labels.push(profiles.has('gyors') ? 'Gyors' : 'Ráérős');
-    return [...new Set(labels)].slice(0, 3);
+    add(labels, profiles.has('gyors') ? 'Gyors' : 'Ráérős');
+    return labels.slice(0, 3);
   }
   if (p.kat === 'praktikus') {
     const type = p.praktikus_tipus === 'bolt'
@@ -131,7 +132,33 @@ function gridLabels(p) {
     });
     return [...new Set([type, ...extras])].slice(0, 3);
   }
-  return [];
+  if (p.kat === 'strand') {
+    const raw = publicTags(p), labels = [];
+    if (isCoveBeach(p)) add(labels, 'Öböl');
+    else if (isCityBeach(p)) add(labels, 'Városi strand');
+    else if (isVillageBeach(p)) add(labels, 'Falusi strand');
+    for (const [term, label] of [['homokos','Homokos'],['kavicsos','Kavicsos'],['sziklas','Sziklás'],['csaladbarat','Családbarát'],['csendes','Csendes'],['nyugodt','Nyugodt'],['snorkeling','Snorkeling'],['arnyekos','Árnyékos'],['naplemente','Naplemente']]) {
+      if (raw.some(tag => tag.includes(term))) add(labels, label);
+    }
+    add(labels, 'Strand');
+    return labels.slice(0, 3);
+  }
+  if (p.kat === 'kilato_foto') {
+    const raw = publicTags(p), facets = p.facettak || [], labels = [];
+    if (facets.includes('vilagitotorony')) add(labels, 'Világítótorony');
+    if (facets.includes('naplemente')) add(labels, 'Naplemente');
+    if (facets.includes('fotos_hely')) add(labels, 'Fotós hely');
+    for (const [term, label] of [['kilatopont','Kilátópont'],['panorama','Panoráma'],['rovid seta','Rövid séta'],['tura','Túra'],['autoval elerheto','Autóval elérhető']]) {
+      if (raw.some(tag => tag.includes(term))) add(labels, label);
+    }
+    add(labels, 'Kilátó');
+    return labels.slice(0, 3);
+  }
+  return [CAT[p.kat]?.nev || 'Hely'];
+}
+function placeTags(p, className = 'placetags') {
+  const labels = placeLabels(p);
+  return labels.length ? `<span class="${className}">${labels.map(label => `<i>${esc(label)}</i>`).join('')}</span>` : '';
 }
 function catIcon(p) {
   if (p.facettak?.includes('vilagitotorony')) return ICONS.torony;
@@ -158,7 +185,7 @@ function placeRow(p) {
     : `<span class="dot" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`;
   return `<button class="place cat-${p.kat}" data-id="${p.id}" style="width:100%;background:none;border:none;color:inherit;text-align:left">
     ${media}
-    <span class="mid"><b>${esc(p.nev)}</b><span class="sub">${badges}${esc(p.zona)}</span></span>
+    <span class="mid"><b>${esc(p.nev)}</b><span class="sub">${badges}${esc(p.zona)}</span>${placeTags(p)}</span>
     <span class="right"><span class="km">${kmTxt(d)}</span>${r ? `<div class="star">★ ${r}</div>` : ''}</span>
   </button>`;
 }
@@ -167,12 +194,11 @@ function renderRows(el, arr, empty) {
 }
 function placeGridCard(p) {
   const img = imageOf(p);
-  const labels = gridLabels(p);
   const media = img
     ? `<span class="gridmedia"><img src="${esc(img.belyegkep || img.borito)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="gridmedia gridicon"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`;
   return `<button class="placegridcard cat-${p.kat}" data-id="${p.id}">
-    ${media}<span class="gridcopy"><b>${esc(p.nev)}</b><span class="gridzone">${esc(p.zona)}</span>${labels.length ? `<span class="gridtags">${labels.map(label => `<i>${esc(label)}</i>`).join('')}</span>` : ''}<span class="gridkm">${kmTxt(distOf(p))}</span></span>
+    ${media}<span class="gridcopy"><b>${esc(p.nev)}</b><span class="gridzone">${esc(p.zona)}</span>${placeTags(p, 'gridtags')}<span class="gridkm">${kmTxt(distOf(p))}</span></span>
   </button>`;
 }
 function sortByDist(arr) { return [...arr].sort((a, b) => (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9)); }
@@ -462,10 +488,11 @@ function dayCardHTML(day) {
   const idol = perc ? ` · ~${idoTxt(perc)} program` : '';
   const ic = day.stops.slice(0, 6).map(p =>
     `<span class="tstopic" style="color:${CAT[p.kat].szin};background:${CAT[p.kat].bg}"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`).join('');
+  const labels = [...new Set(day.stops.map(p => CAT[p.kat]?.nev).filter(Boolean))].slice(0, 3);
   return `<button class="daycard" data-terv="${day.id}">
     <div class="dayhead"><span class="dayic"><svg viewBox="0 0 24 24">${day.ic}</svg></span>
       <span class="daytitle"><b>${esc(day.cim)}</b><span class="sub">${day.sajat ? 'Saját összeállítás · ' : ''}${esc(day.sub)}</span></span></div>
-    <div class="daystops">${ic}</div>
+    <div class="daystops">${ic}</div>${labels.length ? `<span class="daytags">${labels.map(label => `<i>${esc(label)}</i>`).join('')}</span>` : ''}
     <div class="daymeta">${day.sajat ? 'Saját nap · ' : ''}${day.stops.length} állomás${idol}</div>
   </button>`;
 }
@@ -493,7 +520,7 @@ function tervFavAdder(stops) {
   const available = sortByDist(DATA.filter(p => favs.has(p.id) && visible(p) && !ids.has(p.id)));
   if (!available.length) return `<section class="tervfavs"><b>Mentett helyek</b><p>Nincs hozzáadható mentett hely. A Böngészőben az adatlap szív gombjával ments helyeket.</p></section>`;
   return `<details class="tervfavs"><summary>Mentett hely hozzáadása (${available.length})</summary><div class="tervfavlist">${available.map(p =>
-    `<button type="button" class="tervfav" data-tervadd="${esc(p.id)}"><span><b>${esc(p.nev)}</b><small>${esc(p.zona)}</small></span><i>+</i></button>`).join('')}</div></details>`;
+    `<button type="button" class="tervfav" data-tervadd="${esc(p.id)}"><span><b>${esc(p.nev)}</b><small>${esc(p.zona)}</small>${placeTags(p)}</span><i>+</i></button>`).join('')}</div></details>`;
 }
 function renderTervList() {
   const f = tervFolyoso(listState);
