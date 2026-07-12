@@ -25,12 +25,11 @@
   <header class="top">
     <div class="topbar">
       <h1>Senj <span class="thin">útikalauz</span></h1>
-      <button class="gear" id="opensettings" aria-label="Beállítások">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3.3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
+      <label class="islandstoggle switch" for="islands">
+        <span>Szigetek is</span>
+        <input type="checkbox" id="islands">
+        <span class="knob"></span>
+      </label>
     </div>
     <div class="searchwrap">
       <svg class="sic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -191,25 +190,6 @@
       <strong>Oda-vissza összesen</strong><b>30,20 €</b>
     </div>
   </section>
-</section>
-
-<!-- ===== BEÁLLÍTÁSOK ===== -->
-<div id="settingsback" class="sheetback hidden"></div>
-<section id="settings" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="settingstitle" tabindex="-1">
-  <div class="grip"></div>
-  <h2 id="settingstitle">Beállítások</h2>
-  <div class="setgroup">
-    <div class="setrow"><span>Szigeti célpontok is</span>
-      <label class="switch"><input type="checkbox" id="islands" aria-label="Szigeti célpontok is"><span class="knob"></span></label></div>
-  </div>
-  <div class="setgroup">
-    <button class="setbtn" id="setloc"><span>Helyzet frissítése</span><span class="setval" id="setlocval">—</span></button>
-    <button class="setbtn" id="setinstall"><span>Telepítés a főképernyőre</span><span class="setval">›</span></button>
-  </div>
-  <div class="setgroup">
-    <div class="setrow"><span>Offline állapot</span><span class="setval" id="setoffline">—</span></div>
-  </div>
-  <div class="setabout">Adatok: Senj környéki nyilvános források.<br>Navigáció: Google Térkép.</div>
 </section>
 
 <!-- ===== ALSÓ NAVIGÁCIÓ ===== -->

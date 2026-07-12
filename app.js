@@ -52,7 +52,7 @@ let currentNavState = null;
 let navDepth = 0, navEpoch = 0;
 let navReady = false, applyingNav = false;
 let scrollSaveTimer = null;
-let sheetOpener = null, pendingSheetOpener = null, settingsOpener = null, highwayOpener = null;
+let sheetOpener = null, pendingSheetOpener = null, highwayOpener = null;
 
 /* ---------- segédek ---------- */
 const $ = s => document.querySelector(s);
@@ -202,26 +202,19 @@ function placeGridCard(p) {
   </button>`;
 }
 function sortByDist(arr) { return [...arr].sort((a, b) => (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9)); }
-function refreshPosition(showStatus = false) {
-  const setval = $('#setlocval');
+function refreshPosition() {
   if (!navigator.geolocation) {
-    if (showStatus && setval) setval.textContent = 'Nem elérhető';
     renderNear();
     return;
   }
-  if (showStatus && setval) setval.textContent = 'Keresés…';
   navigator.geolocation.getCurrentPosition(
     g => {
       pos = { lat: g.coords.latitude, lng: g.coords.longitude };
-      if (setval) setval.textContent = 'Bekapcsolva';
       renderHome();
       renderNear();
       if (listState) renderList();
     },
-    () => {
-      if (showStatus && setval) setval.textContent = 'Nem sikerült';
-      renderNear();
-    },
+    () => { renderNear(); },
     { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
   );
 }
@@ -918,7 +911,7 @@ document.addEventListener('click', e => {
   if (nav) return showTab(nav.dataset.tab);
   const goto = e.target.closest('[data-goto]');
   if (goto) return showTab(goto.dataset.goto);
-  if (e.target.closest('[data-nearlocation]')) return refreshPosition(true);
+  if (e.target.closest('[data-nearlocation]')) return refreshPosition();
   const cat = e.target.closest('[data-cat]');
   if (cat) return openList({ tipus: 'cat', cat: cat.dataset.cat, cim: CAT[cat.dataset.cat].nev });
   const coll = e.target.closest('[data-coll]');
@@ -978,16 +971,14 @@ $('#sheet').addEventListener('touchend', e => {
 }, { passive: true });
 document.addEventListener('keydown', e => {
   const highwayOpen = !$('#highwaysheet').classList.contains('hidden');
-  const settingsOpen = !$('#settings').classList.contains('hidden');
   const sheetOpen = !$('#sheet').classList.contains('hidden');
   if (e.key === 'Escape') {
     if (highwayOpen) { e.preventDefault(); closeHighway(); }
-    else if (settingsOpen) { e.preventDefault(); closeSettings(); }
     else if (sheetOpen) { e.preventDefault(); closeSheet(); }
     return;
   }
   if (e.key !== 'Tab') return;
-  const panel = highwayOpen ? $('#highwaysheet') : (settingsOpen ? $('#settings') : (sheetOpen ? $('#sheet') : null));
+  const panel = highwayOpen ? $('#highwaysheet') : (sheetOpen ? $('#sheet') : null);
   if (!panel) return;
   const items = panelFocusables(panel);
   if (!items.length) { e.preventDefault(); panel.focus(); return; }
@@ -1040,26 +1031,6 @@ document.querySelectorAll('[data-highway-target]').forEach(btn => {
   });
 });
 
-/* ---------- beállítások ---------- */
-function openSettings(opener) {
-  settingsOpener = opener || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
-  $('#setoffline').textContent = navigator.onLine ? 'Elérhető offline' : 'Nincs kapcsolat';
-  $('#setlocval').textContent = pos ? 'Bekapcsolva' : 'Ismeretlen';
-  $('#settings').classList.remove('hidden');
-  $('#settingsback').classList.remove('hidden');
-  focusPanel($('#settings'));
-}
-function closeSettings() {
-  const opener = settingsOpener;
-  settingsOpener = null;
-  $('#settings').classList.add('hidden');
-  $('#settingsback').classList.add('hidden');
-  restoreFocus(opener);
-}
-$('#opensettings').onclick = e => openSettings(e.currentTarget);
-$('#settingsback').onclick = closeSettings;
-$('#setloc').onclick = () => refreshPosition(true);
-$('#setinstall').onclick = () => { closeSettings(); localStorage.removeItem('senj_tip_ok'); $('#installtip').classList.remove('hidden'); };
 
 window.addEventListener('scroll', () => {
   clearTimeout(scrollSaveTimer);
