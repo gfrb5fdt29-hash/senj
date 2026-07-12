@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v43';
+const CACHE = 'senj-utikalauz-v44';
 const CACHE_PREFIX = 'senj-utikalauz-';
 const CORE = [
   './',
@@ -87,13 +87,14 @@ const CORE = [
   'images/places/B-0034.webp',
   'images/places/V-0006.webp',
 ];
+let installHadFailures = false;
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
     // Egy hiányzó asset ne akadályozza meg a teljes offline frissítés telepítését.
     await Promise.all(CORE.map(async url => {
       try { await c.add(url); }
-      catch (err) { console.warn('Nem sikerült offline eltárolni:', url, err); }
+      catch (err) { installHadFailures = true; console.warn('Nem sikerült offline eltárolni:', url, err); }
     }));
     self.skipWaiting();
   })());
@@ -101,9 +102,12 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    // A Cache Storage origin-szintű: csak a saját régi cache-einket töröljük.
-    for (const k of await caches.keys()) {
-      if (k.startsWith(CACHE_PREFIX) && k !== CACHE) await caches.delete(k);
+    // Ha az új cache hiányos, ne dobjuk el a réginek a jól működő offline példányait.
+    if (!installHadFailures) {
+      // A Cache Storage origin-szintű: csak a saját régi cache-einket töröljük.
+      for (const k of await caches.keys()) {
+        if (k.startsWith(CACHE_PREFIX) && k !== CACHE) await caches.delete(k);
+      }
     }
     await self.clients.claim();
   })());
@@ -123,7 +127,11 @@ self.addEventListener('fetch', e => {
         if (resp.ok) {
           const c = await caches.open(CACHE);
           await c.put(e.request.mode === 'navigate' ? 'index.html' : e.request, resp.clone());
+          return resp;
         }
+        // Szerverhiba (pl. 500) esetén inkább a legutóbbi jó példányt adjuk vissza.
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') return (await caches.match('index.html')) || resp;
         return resp;
       } catch (err) {
         if (cached) return cached;

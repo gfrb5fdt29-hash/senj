@@ -846,7 +846,7 @@ $('#islands').checked = islandsOn;
 $('#islands').addEventListener('change', e => {
   islandsOn = e.target.checked;
   localStorage.setItem('senj_islands', islandsOn ? '1' : '0');
-  renderHome(); renderMarkers();
+  renderHome();
   if (listState) renderList();
   saveCurrentNav();
 });
