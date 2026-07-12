@@ -484,6 +484,89 @@ body.map-active{height:100dvh;overflow:hidden}
 .gridcopy b{display:block;overflow:visible;-webkit-line-clamp:unset;overflow-wrap:anywhere}
 .gridzone,.gridkm{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 
+/* ---------- egységes, lágy útiterv-üveg rendszer ---------- */
+:root{
+  --planner-edge:rgba(255,255,255,.62);
+  --planner-edge-soft:rgba(255,255,255,.38);
+  --planner-shine:rgba(255,255,255,.22);
+  --planner-base-hi:rgba(61,132,148,.76);
+  --planner-base-low:rgba(25,73,101,.76);
+  --planner-depth:0 8px 0 rgba(1,35,57,.13),0 17px 29px rgba(1,35,57,.25);
+  --planner-depth-pressed:0 3px 0 rgba(1,35,57,.13),0 7px 13px rgba(1,35,57,.18);
+}
+
+/* A kategória színe megmarad, de már csak finom üvegárnyalatként. */
+.cat-strand,.catcard[data-cat="strand"]{--planner-hi:rgba(85,157,164,.76);--planner-low:rgba(32,101,112,.76)}
+.cat-kilato_foto,.catcard[data-cat="kilato_foto"]{--planner-hi:rgba(194,163,112,.78);--planner-low:rgba(125,91,56,.76)}
+.cat-etterem,.catcard[data-cat="etterem"]{--planner-hi:rgba(220,157,146,.78);--planner-low:rgba(173,102,104,.76)}
+.cat-praktikus,.catcard[data-cat="praktikus"]{--planner-hi:rgba(150,142,194,.78);--planner-low:rgba(91,84,144,.76)}
+
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn,.mapmsg){
+  border-color:var(--planner-edge)!important;
+  box-shadow:inset 0 1px 0 var(--planner-shine),inset 0 -2px 0 rgba(0,25,48,.13),var(--planner-depth)!important;
+  backdrop-filter:blur(18px) saturate(124%);
+  -webkit-backdrop-filter:blur(18px) saturate(124%);
+}
+
+:where(.catcard,.recocard,.place,.placegridcard){
+  color:#fff!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.035)),linear-gradient(135deg,var(--planner-hi,var(--planner-base-hi)),var(--planner-low,var(--planner-base-low)))!important;
+}
+:where(.catcard,.recocard,.place,.placegridcard) :is(b,.sub,.km,.gridzone,.gridkm){color:#fff!important}
+:where(.catcard,.recocard,.place,.placegridcard) .badge{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.34)!important;color:#fff!important}
+:where(.catcard,.recocard,.place,.placegridcard) .cic,
+:where(.catcard,.recocard,.place,.placegridcard) .gridmedia.gridicon{
+  background:rgba(255,255,255,.14)!important;color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important;
+}
+.placegridcard .gridmedia{border-color:rgba(255,255,255,.27)!important}
+
+/* Felfedezés: kereső, gyűjtemények és ajánlók ugyanabból az anyagból készülnek. */
+#view-home .searchwrap{
+  background:linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.05)),linear-gradient(135deg,rgba(70,145,158,.82),rgba(30,79,108,.82))!important;
+  border-color:var(--planner-edge)!important;box-shadow:inset 0 1px 0 var(--planner-shine),inset 0 -2px 0 rgba(0,25,48,.13),var(--planner-depth)!important;
+  backdrop-filter:blur(18px) saturate(124%);-webkit-backdrop-filter:blur(18px) saturate(124%);
+}
+#view-home .homecoll{
+  background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.035)),linear-gradient(135deg,color-mix(in srgb,var(--collection-tone) 78%,#fff),color-mix(in srgb,var(--collection-tone) 77%,#173f58))!important;
+  border-color:var(--planner-edge)!important;color:#fff!important;
+}
+#view-home .homecoll .cic{background:rgba(255,255,255,.15)!important;color:#fff!important}
+#view-home .homecoll .sub{color:rgba(255,255,255,.84)!important}
+
+/* Napi tervező: ez a felület a többi elem vizuális etalonja. */
+.daycard{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(76,145,159,.8),rgba(35,84,111,.8))!important;color:#fff!important}
+.dayic{background:rgba(255,255,255,.16)!important;color:#fff!important}
+.tervnote{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(220,154,143,.8),rgba(171,97,103,.8))!important}
+.seg{background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.035)),linear-gradient(135deg,rgba(77,143,151,.8),rgba(35,82,105,.8))!important}
+.segbtn.on{background:rgba(255,255,255,.22)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 4px 10px rgba(1,35,57,.18)!important}
+.tervfavs{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.035)),linear-gradient(135deg,rgba(147,138,191,.8),rgba(82,76,137,.8))!important}
+.tervfav,.tervremove{background:rgba(9,49,76,.22)!important;border-color:rgba(255,255,255,.28)!important}
+.tervstop{box-shadow:var(--planner-depth)!important}
+.tervstop .place{border-color:var(--planner-edge)!important}
+
+/* Adatlap és beállítások: tartós, jól olvasható üvegpanelek. */
+.sheet{background:linear-gradient(155deg,rgba(72,141,155,.84),rgba(35,95,117,.82) 48%,rgba(27,67,98,.84))!important;border-color:var(--planner-edge)!important;box-shadow:inset 0 1px 0 var(--planner-shine),0 -16px 34px rgba(1,35,57,.34)!important;backdrop-filter:blur(22px) saturate(124%);-webkit-backdrop-filter:blur(22px) saturate(124%)}
+.sheet[data-category="strand"]{background:linear-gradient(155deg,rgba(85,157,164,.84),rgba(44,120,130,.82) 48%,rgba(28,88,104,.84))!important}
+.sheet[data-category="kilato_foto"]{background:linear-gradient(155deg,rgba(194,163,112,.86),rgba(151,109,61,.83) 48%,rgba(106,74,44,.85))!important}
+.sheet[data-category="etterem"]{background:linear-gradient(155deg,rgba(220,157,146,.86),rgba(194,119,114,.83) 48%,rgba(154,83,90,.85))!important}
+.sheet[data-category="praktikus"]{background:linear-gradient(155deg,rgba(150,142,194,.86),rgba(112,103,166,.83) 48%,rgba(75,70,127,.85))!important}
+.mchip,.ratingblock,.stat,.amen,.callout,.callout.info,.callout.photo{background:rgba(7,47,73,.22)!important;border-color:var(--planner-edge-soft)!important}
+#settings .setgroup{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(73,142,153,.8),rgba(37,81,105,.8))!important}
+#settings .setgroup + .setgroup{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(147,138,191,.8),rgba(82,76,137,.8))!important}
+#settings .setgroup + .setgroup + .setgroup{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(194,163,112,.8),rgba(125,91,56,.8))!important}
+.installtip{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(220,154,143,.8),rgba(171,97,103,.8))!important}
+
+/* Minden kisebb vezérlő is kap keretet és finom mélységet. */
+.chip,.back,.gear{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(72,141,155,.8),rgba(35,80,104,.8))!important}
+.chip.on,.chip.shuffle,.mapchips .chip.on{background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.05)),linear-gradient(135deg,rgba(220,154,143,.82),rgba(171,97,103,.82))!important}
+.bottomnav{background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025)),rgba(15,63,90,.82)!important;border-top:1px solid var(--planner-edge)!important;box-shadow:inset 0 1px 0 var(--planner-shine),0 -8px 28px rgba(1,35,57,.27)!important;backdrop-filter:blur(20px) saturate(124%);-webkit-backdrop-filter:blur(20px) saturate(124%)}
+.mapmsg{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(72,141,155,.88),rgba(31,73,102,.88))!important}
+
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn,.mapmsg):active{
+  transform:translateY(4px) scale(.985);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),var(--planner-depth-pressed)!important;
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
     transition-duration:.001ms!important;scroll-behavior:auto!important}
