@@ -596,6 +596,36 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 }
 .tervremove{background:rgba(19,69,94,.42)!important;border-color:rgba(255,255,255,.42)!important}
 
+/* ---------- végleges, egységes gyűjtemény-üveg ---------- */
+:root{
+  --collection-glass-top:rgba(241,253,252,.58);
+  --collection-glass-bottom:rgba(174,220,230,.38);
+  --collection-glass-edge:rgba(255,255,255,.72);
+  --collection-glass-ink:#09364E;
+  --collection-glass-muted:#285C70;
+  --collection-glass-shadow:inset 0 1px 0 rgba(255,255,255,.68),inset 0 -1px 0 rgba(5,50,73,.09),0 8px 19px rgba(1,35,57,.18);
+}
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheetplanchoices,.sheet .favbtn,.btn,.searchwrap,.sheet,.nearrequest,.bottomnav){
+  background:linear-gradient(145deg,var(--collection-glass-top),var(--collection-glass-bottom))!important;
+  border-color:var(--collection-glass-edge)!important;
+  box-shadow:var(--collection-glass-shadow)!important;
+  color:var(--collection-glass-ink)!important;
+  backdrop-filter:blur(24px) saturate(118%);-webkit-backdrop-filter:blur(24px) saturate(118%);
+}
+.catcard :is(b,span),.homecoll :is(b,span),.recocard :is(b,span),.place :is(b,.sub,.km,.star),.placegridcard :is(b,.gridzone,.gridkm),.daycard :is(b,.sub,.daymeta),.tervfavs :is(b,p,summary,.tervfav,.tervfav small),.tervnote,.segbtn,.setrow,.setbtn,.setval,.setabout,.chip,.back,.gear,.mchip,.ratingblock :is(.rval,.rstars,.rmeta,.crowd,.rdate,.signals li),.stat :is(b,span),.amen,.callout,.sheetplanchoices :is(b,span),.btn{color:var(--collection-glass-ink)!important}
+.place .badge{background:rgba(255,255,255,.42)!important;border-color:rgba(9,54,78,.16)!important;color:var(--collection-glass-ink)!important}
+.catcard .cic,.homecoll .cic,.dayic,.gridmedia.gridicon{background:rgba(255,255,255,.34)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.68)!important}
+.catcard[data-cat="strand"] .cic{color:var(--c-strand)!important}.catcard[data-cat="kilato_foto"] .cic{color:var(--amber-ink)!important}.catcard[data-cat="etterem"] .cic{color:var(--coral-ink)!important}.catcard[data-cat="praktikus"] .cic{color:var(--praktikus-ink)!important}.homecoll .cic{color:var(--collection-tone)!important}.dayic,.gridmedia.gridicon svg{color:var(--collection-glass-ink)!important}
+.sheet,.sheet[data-category="strand"],.sheet[data-category="kilato_foto"],.sheet[data-category="etterem"],.sheet[data-category="praktikus"]{background:linear-gradient(145deg,rgba(241,253,252,.68),rgba(174,220,230,.48))!important;color:var(--collection-glass-ink)!important}
+.sheet h2,#settings h2,.sheet .sheet-official,.sheet .mchip,.sheet .rval,.sheet .rstars,.sheet .rmeta,.sheet .crowd,.sheet .rdate,.sheet .signals li,.sheet .tagrow,.sheet .amenhead,.sheet .stat b,.sheet .stat span,.sheet .amen,.sheet .callout,.sheet .callout span{color:var(--collection-glass-ink)!important}
+.sheet .favbtn{color:var(--collection-glass-ink)!important}.sheet .btn.sec,.tervremove,.tervfav{background:rgba(255,255,255,.34)!important;color:var(--collection-glass-ink)!important;border-color:rgba(9,54,78,.16)!important}
+#view-home .searchwrap,#view-home #search,#view-home .sclear{color:var(--collection-glass-ink)!important}#view-home #search::placeholder{color:var(--collection-glass-muted)!important}
+.bottomnav button{color:rgba(9,54,78,.66)!important}.bottomnav button.active{color:var(--collection-glass-ink)!important}.nearhead{color:#D5F0F2!important}.nearhead small{color:#B9DDE1!important}.nearrequest :is(b,p){color:var(--collection-glass-ink)!important}
+.view .top h1{color:#D5F0F2!important;text-shadow:0 2px 12px rgba(1,18,37,.42)}.view .top h1 .thin{color:#B9DDE1!important}
+#view-home .catcard :is(b,span),#view-home .homecoll :is(b,span){color:var(--collection-glass-ink)!important}
+#view-home .catcard[data-cat="strand"] .cic{color:var(--c-strand)!important}#view-home .catcard[data-cat="kilato_foto"] .cic{color:var(--amber-ink)!important}#view-home .catcard[data-cat="etterem"] .cic{color:var(--coral-ink)!important}#view-home .catcard[data-cat="praktikus"] .cic{color:var(--praktikus-ink)!important}#view-home .homecoll .cic{color:var(--collection-tone)!important}
+body .place.cat-strand :is(.mid b,.mid .sub,.right .km,.right .star),body .place.cat-kilato_foto :is(.mid b,.mid .sub,.right .km,.right .star),body .place.cat-etterem :is(.mid b,.mid .sub,.right .km,.right .star),body .place.cat-praktikus :is(.mid b,.mid .sub,.right .km,.right .star){color:var(--collection-glass-ink)!important}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
     transition-duration:.001ms!important;scroll-behavior:auto!important}
