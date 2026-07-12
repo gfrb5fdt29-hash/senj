@@ -45,7 +45,6 @@ let DATA = [];
 let pos = null;               // aktuális pozíció
 let favs = new Set(readStoredArray('senj_favs'));
 let islandsOn = localStorage.getItem('senj_islands') === '1';
-let map = null, markerLayer = null, positionMarker = null, mapFilter = 'mind';
 let listState = null;         // aktuális listanézet paraméterei
 let currentSheetId = null;
 let currentNavState = null;
@@ -338,6 +337,16 @@ function addTervStop(f, seed, id) {
   if (!ids.includes(id)) ids.push(id);
   setTervDraft(f, seed, ids);
 }
+function addPlaceToTerv(f, id) {
+  const seed = tervSeeds[f] || 0;
+  const ids = tervStops(f, seed, true).map(p => p.id);
+  if (ids.includes(id)) return false;
+  ids.push(id);
+  tervSavedDays[f] = { stopIds: ids };
+  delete tervDraftDays[f];
+  persistSavedTervDays();
+  return true;
+}
 function removeTervStop(f, seed, id) {
   setTervDraft(f, seed, tervStops(f, seed, true).map(p => p.id).filter(x => x !== id));
 }
@@ -399,7 +408,7 @@ function tervStopRow(p) {
 function tervFavAdder(stops) {
   const ids = new Set(stops.map(p => p.id));
   const available = sortByDist(DATA.filter(p => favs.has(p.id) && visible(p) && !ids.has(p.id)));
-  if (!available.length) return `<section class="tervfavs"><b>Mentett helyek</b><p>Nincs hozzáadható mentett hely. A Felfedezésben az adatlap szív gombjával ments helyeket.</p></section>`;
+  if (!available.length) return `<section class="tervfavs"><b>Mentett helyek</b><p>Nincs hozzáadható mentett hely. A Böngészőben az adatlap szív gombjával ments helyeket.</p></section>`;
   return `<details class="tervfavs"><summary>Mentett hely hozzáadása (${available.length})</summary><div class="tervfavlist">${available.map(p =>
     `<button type="button" class="tervfav" data-tervadd="${esc(p.id)}"><span><b>${esc(p.nev)}</b><small>${esc(p.zona)}</small></span><i>+</i></button>`).join('')}</div></details>`;
 }
@@ -553,12 +562,21 @@ function renderSheet(id) {
   if (tags.length) html += `<div class="tagrow">${tags.map(esc).join(' · ')}</div>`;
 
   const navUrl = p.utvonal_url || p.kereses_url;
+  const tervChoices = FOLYOSO_SORREND.map(f => {
+    const day = FOLYOSO[f];
+    return `<button type="button" class="sheetplanchoice" data-sheettervadd="${f}" data-place="${esc(p.id)}">
+      <span>${esc(day.cim)}</span><small>${esc(day.sub)}</small><i>+</i></button>`;
+  }).join('');
   html += `<div class="actions">
     <a class="btn" href="${navUrl}" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24"><path d="M12 2 4.5 21 12 17l7.5 4z" fill="currentColor"/></svg>
-      Útvonal indítása</a>
-    ${p.lat != null ? `<button class="btn sec" id="sheetmap">Térképen</button>` : ''}
+      Útvonal Google Térképen</a>
+    <button class="btn sec" id="sheetplan" type="button" aria-expanded="false" aria-controls="sheetplanchoices">Tervezőhöz adom</button>
   </div>`;
+  html += `<section class="sheetplanchoices hidden" id="sheetplanchoices" aria-label="Nap kiválasztása">
+    <b>Válassz napot</b><span id="sheetplanstatus" class="sheetplanstatus" role="status"></span>
+    <div>${tervChoices}</div>
+  </section>`;
 
   $('#sheetbody').innerHTML = html;
   $('#sheet').dataset.category = p.kat;
@@ -569,8 +587,11 @@ function renderSheet(id) {
     if (listState?.tipus === 'terv') renderTervList();
     saveCurrentNav();
   };
-  const mbtn = $('#sheetmap');
-  if (mbtn) mbtn.onclick = () => openMapFromSheet(p);
+  $('#sheetplan').onclick = () => {
+    const choices = $('#sheetplanchoices');
+    const open = choices.classList.toggle('hidden');
+    $('#sheetplan').setAttribute('aria-expanded', String(!open));
+  };
   focusPanel($('#sheet'));
 }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
@@ -593,89 +614,6 @@ function hideSheet() {
 function closeSheet() {
   if (currentSheetId && navReady && navDepth > 0) history.back();
   else hideSheet();
-}
-
-/* ---------- TÉRKÉP ---------- */
-function setMapMessage(message) {
-  $('#mapoffline p').innerHTML = message;
-  $('#mapoffline').classList.remove('hidden');
-}
-function showOfflineMapMessage() {
-  setMapMessage('A térkép internetkapcsolatot igényel.<br>A helyek listái offline is elérhetők.');
-}
-function showMapUnavailableMessage() {
-  setMapMessage('A térkép most nem tölthető be.<br>A helyek listái és az útvonalindítás továbbra is használhatók.');
-}
-function hideMapMessage() {
-  $('#mapoffline').classList.add('hidden');
-}
-function updatePositionMarker() {
-  if (!map || !pos) return;
-  const latLng = [pos.lat, pos.lng];
-  if (positionMarker) positionMarker.setLatLng(latLng);
-  else positionMarker = L.circleMarker(latLng, {
-    radius: 7, color: '#fff', weight: 2, fillColor: '#007F7B', fillOpacity: 1,
-  }).addTo(map);
-}
-function initMap() {
-  if (map) return true;
-  if (typeof L === 'undefined') {
-    showMapUnavailableMessage();
-    return false;
-  }
-  let nextMap = null;
-  try {
-    nextMap = L.map('map', {
-      zoomControl: true, attributionControl: true, touchZoom: true,
-      doubleClickZoom: true, scrollWheelZoom: true, keyboard: true,
-    })
-      .setView([44.95, 14.9], 10);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap, © CARTO', maxZoom: 20,
-    }).addTo(nextMap).on('tileerror', () => { if (!navigator.onLine) showOfflineMapMessage(); });
-    map = nextMap;
-    markerLayer = L.layerGroup().addTo(map);
-    map.on('moveend', () => { if (navReady && !applyingNav) saveCurrentNav(); });
-    updatePositionMarker();
-    renderMarkers();
-    return true;
-  } catch (err) {
-    nextMap?.remove();
-    map = null;
-    markerLayer = null;
-    positionMarker = null;
-    showMapUnavailableMessage();
-    return false;
-  }
-}
-const MAPSZIN = { strand:'#007F7B', kilato_foto:'#E9A923', etterem:'#E95D5D', praktikus:'#8478C4' };
-function renderMarkers() {
-  if (!markerLayer) return;
-  markerLayer.clearLayers();
-  DATA.filter(p => p.lat != null && visible(p) && (mapFilter === 'mind' || p.kat === mapFilter)).forEach(p => {
-    L.circleMarker([p.lat, p.lng], {
-      radius: 8, color: '#ffffff', weight: 2, fillColor: MAPSZIN[p.kat], fillOpacity: .95,
-    }).addTo(markerLayer).on('click', () => openSheet(p.id));
-  });
-}
-function focusOnMap(p) { if (initMap()) { map.setView([p.lat, p.lng], 14); openSheet(p.id); } }
-function openMapFromSheet(p) {
-  pendingSheetOpener = sheetOpener;
-  const origin = captureNavState();
-  saveCurrentNav(origin);
-  navigateTo({
-    screen: 'map',
-    mapFilter,
-    mapView: { lat: p.lat, lng: p.lng, zoom: 14 },
-    sheetId: p.id,
-    underlay: origin,
-    scrollY: 0,
-  });
-}
-function renderMapChips() {
-  const defs = [['mind','Mind'], ...Object.entries(CAT).map(([k, c]) => [k, c.nev])];
-  $('#mapchips').innerHTML = defs.map(([k, l]) =>
-    `<button class="chip ${mapFilter === k ? 'on' : ''}" data-mapchip="${k}">${l}</button>`).join('');
 }
 
 /* ---------- KERESÉS ---------- */
@@ -738,7 +676,6 @@ function setActiveTab(t) {
     b.classList.toggle('active', b.dataset.tab === t));
 }
 function showView(v, keepTab) {
-  document.body.classList.toggle('map-active', v === 'map');
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   $('#view-' + v).classList.add('active');
   if (!keepTab) setActiveTab(v);
@@ -747,14 +684,6 @@ function showView(v, keepTab) {
 function renderTab(t) {
   hideSheet();
   showView(t);
-  if (t === 'map') {
-    const mapReady = initMap();
-    renderMapChips();
-    if (mapReady) {
-      if (navigator.onLine) hideMapMessage(); else showOfflineMapMessage();
-      requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
-    }
-  }
   if (t === 'fav') renderFavs();
   if (t === 'terv') renderTerv();
   if (t === 'home') renderHome();
@@ -762,10 +691,10 @@ function renderTab(t) {
 function cleanNavState(state) {
   let s;
   try { s = JSON.parse(JSON.stringify(state || {})); } catch (err) { s = {}; }
-  if (!['home','map','terv','fav','list'].includes(s.screen)) s = { screen: 'home' };
+  if (!['home','terv','fav','list'].includes(s.screen)) s = { screen: 'home' };
   if (s.screen === 'list' && !s.list) s = { screen: 'home' };
   if (s.sheetId && !DATA.some(p => p.id === s.sheetId)) {
-    return cleanNavState(s.underlay || { screen: s.screen, list: s.list, mapFilter: s.mapFilter });
+    return cleanNavState(s.underlay || { screen: s.screen, list: s.list });
   }
   s.scrollY = Number.isFinite(s.scrollY) ? Math.max(0, s.scrollY) : 0;
   return s;
@@ -775,13 +704,6 @@ function captureNavState() {
   const state = { screen: active, scrollY: window.scrollY || 0 };
   if (active === 'list' && listState) state.list = { ...listState };
   if (active === 'home') state.search = $('#search').value;
-  if (active === 'map') {
-    state.mapFilter = mapFilter;
-    if (map) {
-      const center = map.getCenter();
-      state.mapView = { lat: center.lat, lng: center.lng, zoom: map.getZoom() };
-    }
-  }
   if (currentSheetId) {
     state.sheetId = currentSheetId;
     if (currentNavState?.sheetId === currentSheetId && currentNavState.underlay)
@@ -818,15 +740,6 @@ function applyNavState(state) {
     renderTab(clean.screen);
   }
 
-  if (clean.screen === 'map') {
-    mapFilter = clean.mapFilter || 'mind';
-    renderMapChips();
-    renderMarkers();
-    const mv = clean.mapView;
-    if (map && mv && Number.isFinite(mv.lat) && Number.isFinite(mv.lng) && Number.isFinite(mv.zoom))
-      map.setView([mv.lat, mv.lng], mv.zoom);
-    if (map) requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
-  }
   if (clean.sheetId) renderSheet(clean.sheetId);
 
   currentNavState = clean;
@@ -844,7 +757,7 @@ function navigateTo(state, { preserveCurrent = true } = {}) {
   applyNavState(clean);
 }
 function showTab(t) {
-  if (!['home','map','terv','fav'].includes(t)) return;
+  if (!['home','terv','fav'].includes(t)) return;
   navEpoch += 1;
   navDepth = 0;
   const next = { screen: t, scrollY: 0 };
@@ -905,6 +818,16 @@ document.addEventListener('click', e => {
     addTervStop(tervFolyoso(listState), listState.seed || 0, tervAdd.dataset.tervadd);
     renderTervList(); saveCurrentNav(); return;
   }
+  const sheetTervAdd = e.target.closest('[data-sheettervadd]');
+  if (sheetTervAdd) {
+    const added = addPlaceToTerv(sheetTervAdd.dataset.sheettervadd, sheetTervAdd.dataset.place);
+    const status = $('#sheetplanstatus');
+    const day = FOLYOSO[sheetTervAdd.dataset.sheettervadd];
+    if (status && day) status.textContent = added ? `${day.cim}: hozzáadva a Tervezőhöz.` : 'Ez a hely már ezen a napon van.';
+    renderTerv();
+    saveCurrentNav();
+    return;
+  }
   const tervSave = e.target.closest('[data-tervsave]');
   if (tervSave && listState?.tipus === 'terv') {
     saveTervDay(tervFolyoso(listState), listState.seed || 0);
@@ -927,8 +850,6 @@ document.addEventListener('click', e => {
   if (pace) { tervPace = pace.dataset.pace; localStorage.setItem('senj_terv_pace', tervPace); renderTerv(); return; }
   const chip = e.target.closest('[data-chip]');
   if (chip) { listState.chip = chip.dataset.chip; renderList(); saveCurrentNav(); return; }
-  const mchip = e.target.closest('[data-mapchip]');
-  if (mchip) { mapFilter = mchip.dataset.mapchip; renderMapChips(); renderMarkers(); saveCurrentNav(); return; }
   const pl = e.target.closest('[data-id]');
   if (pl) return openSheet(pl.dataset.id, pl);
 });
@@ -990,25 +911,13 @@ $('#setloc').onclick = () => {
     g => {
       pos = { lat: g.coords.latitude, lng: g.coords.longitude };
       $('#setlocval').textContent = 'Bekapcsolva';
-      renderHome(); if (listState) renderList(); if (map) { updatePositionMarker(); renderMarkers(); }
+      renderHome(); if (listState) renderList();
     },
     () => { $('#setlocval').textContent = 'Nem sikerült'; },
     { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
   );
 };
 $('#setinstall').onclick = () => { closeSettings(); localStorage.removeItem('senj_tip_ok'); $('#installtip').classList.remove('hidden'); };
-
-window.addEventListener('online', () => {
-  if (map) {
-    hideMapMessage();
-    setTimeout(() => map.invalidateSize(), 60);
-  } else if ($('#view-map').classList.contains('active')) {
-    initMap();
-  }
-});
-window.addEventListener('offline', () => {
-  if ($('#view-map').classList.contains('active')) showOfflineMapMessage();
-});
 
 window.addEventListener('scroll', () => {
   clearTimeout(scrollSaveTimer);
@@ -1041,7 +950,6 @@ async function boot() {
       renderHome();
       if (currentNavState?.search) runSearch(currentNavState.search);
       if (listState) renderList();
-      if (map) updatePositionMarker();
     },
     () => {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
   );

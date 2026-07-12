@@ -51,9 +51,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 /* ---------- nézetek ---------- */
 .view{display:none;min-height:100vh}
 .view.active{display:block}
-#view-map.active{position:fixed;top:0;right:0;bottom:auto;left:0;min-height:0;
-  height:calc(100vh - var(--nav-h));height:calc(100dvh - var(--nav-h))}
-body.map-active{height:100dvh;overflow:hidden}
 
 /* ---------- fejléc ---------- */
 .top{padding:calc(env(safe-area-inset-top) + 14px) 18px 10px;position:sticky;top:0;z-index:30;
@@ -138,19 +135,6 @@ body.map-active{height:100dvh;overflow:hidden}
 .badge.nomap{background:rgba(92,107,115,.12);color:var(--muted)}
 .empty{padding:44px 24px;text-align:center;color:var(--muted);font-size:14.5px;line-height:1.6}
 
-/* ---------- térkép ---------- */
-#map{position:absolute;inset:0;width:100%;height:100%;background:#DCE8EC}
-.mapchips{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:0;right:0;z-index:1000}
-.mapchips .chip{background:var(--card);box-shadow:var(--sh-raise)}
-.mapchips .chip.on{background:var(--accent-bg)}
-.mapmsg{position:absolute;inset:0;z-index:1200;background:rgba(247,249,248,.92);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  text-align:center;color:var(--muted);font-size:15px;line-height:1.6;padding:30px}
-.leaflet-container{font-family:inherit}
-.leaflet-control-attribution{background:rgba(255,255,255,.72)!important;color:#8794a0!important;font-size:9px!important}
-.leaflet-control-attribution a{color:var(--muted)!important}
-.leaflet-bar a{background:var(--card)!important;color:var(--text)!important;border-color:var(--line)!important}
-
 /* ---------- adatlap ---------- */
 .sheetback{position:fixed;inset:0;background:rgba(15,44,89,.35);z-index:90;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:100;background:var(--card);
@@ -204,6 +188,11 @@ body.map-active{height:100dvh;overflow:hidden}
 .btn:active{transform:scale(.98)}
 .btn.sec{background:var(--card);color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
 .btn svg{width:18px;height:18px}
+.sheetplanchoices{margin-top:10px;padding:13px;border:1px solid rgba(255,255,255,.38);border-radius:15px;background:rgba(6,47,73,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.sheetplanchoices>b{display:block;font-size:13px}.sheetplanstatus{display:block;min-height:18px;margin:3px 0 7px;color:rgba(255,255,255,.84);font-size:12px}
+.sheetplanchoice{position:relative;width:100%;display:block;padding:10px 34px 10px 11px;border:0;border-top:1px solid rgba(255,255,255,.23);background:transparent;color:#fff;text-align:left;font:inherit}
+.sheetplanchoice span,.sheetplanchoice small{display:block;overflow-wrap:anywhere}.sheetplanchoice span{font-size:13px;font-weight:600}.sheetplanchoice small{margin-top:2px;color:rgba(255,255,255,.76);font-size:11px;line-height:1.3}.sheetplanchoice i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:22px;color:#fff}
+.sheetplanchoice:active{background:rgba(255,255,255,.12)}
 
 /* ---------- alsó navigáció ---------- */
 .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;
@@ -409,10 +398,10 @@ body.map-active{height:100dvh;overflow:hidden}
 .mchip,.ratingblock,.stat,.amen,.callout,.callout.info,.callout.photo{background:rgba(0,25,48,.2)!important;color:#fff!important;border-color:rgba(255,255,255,.25)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}.mchip.km,.stat-ic,.amen,.sheet .rval,.sheet .rstars,.sheet .rmeta,.sheet .crowd,.sheet .rdate,.sheet .signals li,.sheet .tagrow,.amenhead{color:#fff!important}.sheet .signals li{border-color:rgba(255,255,255,.2)!important}.sheet .btn.sec{background:rgba(255,255,255,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.36)!important}
 #settings .setgroup{background:linear-gradient(145deg,#168594,#07546F)!important}#settings .setgroup + .setgroup{background:linear-gradient(145deg,#7868D6,#5141A4)!important}#settings .setgroup + .setgroup + .setgroup{background:linear-gradient(145deg,#D98F22,#A4630C)!important}#settings .setrow,#settings .setbtn{color:#fff!important;border-color:rgba(255,255,255,.22)!important}.setval,#settings .setabout{color:rgba(255,255,255,.8)!important}.switch .knob{background:rgba(0,20,43,.26)!important;border-color:rgba(255,255,255,.3)!important}.switch .knob::after{background:rgba(255,255,255,.82)!important}
 .installtip{background:linear-gradient(145deg,#EE765F,#D84B56)!important}.installtip .shic,.installtip button{color:#fff!important}
-.chip,.back{background:linear-gradient(145deg,#137C93,#07516E)!important;color:#fff!important;border-color:rgba(255,255,255,.32)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 5px 12px rgba(0,20,43,.2)!important}.chip.on,.chip.shuffle{background:linear-gradient(145deg,#FF8B76,#D94C55)!important;color:#fff!important;border-color:rgba(255,255,255,.4)!important}.mapchips .chip{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),var(--lift)!important}.bottomnav{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 -8px 28px rgba(0,20,43,.22)}.bottomnav button{transition:transform .18s var(--ease),color .18s var(--ease)}.bottomnav button:active{transform:translateY(2px) scale(.94)}.mapmsg{background:linear-gradient(155deg,rgba(21,126,147,.96),rgba(5,57,99,.97))!important;color:#fff!important}.mapmsg .btn{background:linear-gradient(145deg,#FF8B76,#D94C55)!important}
-:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.seg,.mapchips .chip,.setgroup,.installtip,.sheet .favbtn,.btn){transition:transform .2s var(--ease),box-shadow .2s var(--ease),filter .2s var(--ease),background .2s var(--ease)!important;transform:translateZ(0);will-change:transform}
-:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.seg,.mapchips .chip,.setgroup,.installtip,.sheet .favbtn,.btn):active{transform:translateY(4px) scale(.985);filter:saturate(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),var(--lift-pressed)!important}
-@media (hover:hover){:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.mapchips .chip,.setgroup,.installtip,.sheet .favbtn,.btn):hover{transform:translateY(-3px);filter:saturate(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 13px 0 rgba(0,30,55,.1),0 24px 34px rgba(0,30,55,.3)!important}}
+.chip,.back{background:linear-gradient(145deg,#137C93,#07516E)!important;color:#fff!important;border-color:rgba(255,255,255,.32)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 5px 12px rgba(0,20,43,.2)!important}.chip.on,.chip.shuffle{background:linear-gradient(145deg,#FF8B76,#D94C55)!important;color:#fff!important;border-color:rgba(255,255,255,.4)!important}.bottomnav{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 -8px 28px rgba(0,20,43,.22)}.bottomnav button{transition:transform .18s var(--ease),color .18s var(--ease)}.bottomnav button:active{transform:translateY(2px) scale(.94)}
+:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.sheet .favbtn,.btn){transition:transform .2s var(--ease),box-shadow .2s var(--ease),filter .2s var(--ease),background .2s var(--ease)!important;transform:translateZ(0);will-change:transform}
+:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.sheet .favbtn,.btn):active{transform:translateY(4px) scale(.985);filter:saturate(1.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),var(--lift-pressed)!important}
+@media (hover:hover){:where(.catcard,.homecoll,.recocard,.place,.daycard,.tervfavs,.tervnote,.setgroup,.installtip,.sheet .favbtn,.btn):hover{transform:translateY(-3px);filter:saturate(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 13px 0 rgba(0,30,55,.1),0 24px 34px rgba(0,30,55,.3)!important}}
 
 /* ---------- kategóriaoldal: kompakt helyrács ---------- */
 #view-list #listbody.placegrid{
@@ -468,7 +457,7 @@ body.map-active{height:100dvh;overflow:hidden}
 .daycard{background:linear-gradient(145deg,#4D8696,#2C6579 58%,#204D69)!important}.tervnote{background:linear-gradient(135deg,#D78D82,#AD676A)!important}.seg{background:linear-gradient(135deg,#4D8587,#2B6070)!important}.tervfavs{background:linear-gradient(145deg,#8178B4,#615A94)!important}
 .sheet{--panel-hi:#4E8A98;--panel:#2A687C;--panel-low:#204B68}.sheet[data-category="strand"]{--panel-hi:#5A9EA1;--panel:#347B82;--panel-low:#215C66}.sheet[data-category="kilato_foto"]{--panel-hi:#C7A16A;--panel:#9E7138;--panel-low:#79542E}.sheet[data-category="etterem"]{--panel-hi:#DEA096;--panel:#C97870;--panel-low:#A85C59}.sheet[data-category="praktikus"]{--panel-hi:#9B94C2;--panel:#756BA9;--panel-low:#5C5688}
 #settings .setgroup{background:linear-gradient(145deg,#4A8995,#2B6070)!important}#settings .setgroup + .setgroup{background:linear-gradient(145deg,#8A82B9,#635B94)!important}#settings .setgroup + .setgroup + .setgroup{background:linear-gradient(145deg,#C49A61,#986D38)!important}
-.installtip{background:linear-gradient(145deg,#D58B7D,#AD6667)!important}.chip,.back{background:linear-gradient(145deg,#4A8995,#2B6070)!important}.chip.on,.chip.shuffle,.mapchips .chip.on{background:linear-gradient(145deg,#D99182,#AD6265)!important}.mapmsg{background:linear-gradient(155deg,rgba(79,139,151,.95),rgba(33,76,104,.96))!important}.mapmsg .btn{background:linear-gradient(145deg,#D99182,#AD6265)!important}
+.installtip{background:linear-gradient(145deg,#D58B7D,#AD6667)!important}.chip,.back{background:linear-gradient(145deg,#4A8995,#2B6070)!important}.chip.on,.chip.shuffle{background:linear-gradient(145deg,#D99182,#AD6265)!important}
 
 /* ---------- iPhone 14 Pro: teljes szöveg, egységes méretek ---------- */
 .top.sub h1{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2}
@@ -501,7 +490,7 @@ body.map-active{height:100dvh;overflow:hidden}
 .cat-etterem,.catcard[data-cat="etterem"]{--planner-hi:rgba(220,157,146,.78);--planner-low:rgba(173,102,104,.76)}
 .cat-praktikus,.catcard[data-cat="praktikus"]{--planner-hi:rgba(150,142,194,.78);--planner-low:rgba(91,84,144,.76)}
 
-:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn,.mapmsg){
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn){
   border-color:var(--planner-edge)!important;
   box-shadow:inset 0 1px 0 var(--planner-shine),inset 0 -2px 0 rgba(0,25,48,.13),var(--planner-depth)!important;
   backdrop-filter:blur(18px) saturate(124%);
@@ -559,11 +548,9 @@ body.map-active{height:100dvh;overflow:hidden}
 
 /* Minden kisebb vezérlő is kap keretet és finom mélységet. */
 .chip,.back,.gear{background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(72,141,155,.8),rgba(35,80,104,.8))!important}
-.chip.on,.chip.shuffle,.mapchips .chip.on{background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.05)),linear-gradient(135deg,rgba(220,154,143,.82),rgba(171,97,103,.82))!important}
+.chip.on,.chip.shuffle{background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.05)),linear-gradient(135deg,rgba(220,154,143,.82),rgba(171,97,103,.82))!important}
 .bottomnav{background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025)),rgba(15,63,90,.82)!important;border-top:1px solid var(--planner-edge)!important;box-shadow:inset 0 1px 0 var(--planner-shine),0 -8px 28px rgba(1,35,57,.27)!important;backdrop-filter:blur(20px) saturate(124%);-webkit-backdrop-filter:blur(20px) saturate(124%)}
-.mapmsg{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),linear-gradient(135deg,rgba(72,141,155,.88),rgba(31,73,102,.88))!important}
-
-:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn,.mapmsg):active{
+:where(.catcard,.homecoll,.recocard,.place,.placegridcard,.daycard,.tervfavs,.tervnote,.seg,.setgroup,.installtip,.chip,.back,.gear,.mchip,.ratingblock,.stat,.amen,.callout,.sheet .favbtn,.btn):active{
   transform:translateY(4px) scale(.985);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),var(--planner-depth-pressed)!important;
 }
 

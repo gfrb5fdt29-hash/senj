@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v30';
+const CACHE = 'senj-utikalauz-v32';
 const CACHE_PREFIX = 'senj-utikalauz-';
 const CORE = [
   './',
@@ -77,11 +77,6 @@ const CORE = [
   'images/places/B-0034.webp',
   'images/places/V-0006.webp',
 ];
-const CDN = [
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-];
-
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
@@ -89,10 +84,6 @@ self.addEventListener('install', e => {
     await Promise.all(CORE.map(async url => {
       try { await c.add(url); }
       catch (err) { console.warn('Nem sikerült offline eltárolni:', url, err); }
-    }));
-    // Leaflet a CDN-ről — offline-hoz eltesszük (opaque válaszként is jó)
-    await Promise.all(CDN.map(async u => {
-      try { await c.add(new Request(u, { mode: 'no-cors' })); } catch (err) {}
     }));
     self.skipWaiting();
   })());
@@ -111,9 +102,6 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  // térképcsempéket nem tárolunk (nagy méret, online-only)
-  if (url.hostname.includes('cartocdn')) return;
-
   e.respondWith((async () => {
     const sameOrigin = url.origin === location.origin;
     const cached = await caches.match(e.request, { ignoreSearch: sameOrigin });
