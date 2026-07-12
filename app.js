@@ -485,14 +485,19 @@ function statTiles(p, d, plan, e) {
   if (plan.belepo_eur != null) out.push({ ic: SIC.ticket, val: plan.belepo_eur === 0 ? 'Ingyenes' : `${plan.belepo_eur} €`, lab: 'Belépő' });
   const part = beachType(p);
   if (out.length < 4 && part) out.push({ ic: SIC.wave, val: part, lab: 'Part' });
-  if (out.length < 4 && plan.aktivitas_szint) out.push({ ic: SIC.hike, val: cap(plan.aktivitas_szint), lab: 'Nehézség' });
+  const akt = AKTIVITAS[plan.aktivitas_szint];
+  if (out.length < 4 && akt && (p.kat === 'strand' || p.kat === 'kilato_foto'))
+    out.push({ ic: SIC.hike, val: akt, lab: 'Nehézség' });
   return out.slice(0, 4);
 }
+const AKTIVITAS = { konnyu: 'Könnyű', kozepes: 'Közepes', nehez: 'Nehéz' };
+const HELYSZINI_PARKOLAS = /^(helyszini|uzleti|kemping|benzinkut|kilatoponti|trznica|zavizan|utvonal_kezdopont|biztonsagos)/;
 function amenities(p, plan) {
   const has = s => (p.cimkek || []).some(x => norm(x).includes(s));
+  const parkol = has('parkol') || HELYSZINI_PARKOLAS.test(plan.parkolas?.tipus || '');
   return [
-    (plan.parkolas || has('parkol')) && { ic: AIC.park, lab: 'Parkolás' },
-    (has('bufe') || has('kave') || has('bisztro') || has('konoba')) && { ic: AIC.cup, lab: 'Büfé' },
+    parkol && { ic: AIC.park, lab: 'Parkolás' },
+    (has('bufe') || has('kave') || has('bisztro')) && { ic: AIC.cup, lab: 'Büfé' },
     has('zuhany') && { ic: AIC.shower, lab: 'Zuhany' },
     (has('vizisport') || has('kajak') || has('sup')) && { ic: AIC.wave, lab: 'Vízisport' },
     (has('snorkel') || has('buvar')) && { ic: AIC.mask, lab: 'Snorkeling' },
@@ -523,8 +528,10 @@ function renderSheet(id) {
     </div>` : '';
   const tiles = statTiles(p, d, plan, e);
   const amens = amenities(p, plan);
+  const hivatalos = p.nev_hivatalos && p.nev_hivatalos !== p.nev
+    ? `<div class="sheet-official">${esc(p.nev_hivatalos)}</div>` : '';
   let html = hero +
-    `<h2 id="sheettitle">${esc(p.nev)}</h2>
+    `<h2 id="sheettitle">${esc(p.nev)}</h2>${hivatalos}
     <button class="favbtn ${favs.has(id) ? 'on' : ''}" id="sheetfav" aria-label="${favs.has(id) ? 'Eltávolítás a mentettek közül' : 'Mentés a kedvencek közé'}" aria-pressed="${favs.has(id)}">${favs.has(id) ? '♥' : '♡'}</button>
     <div class="metachips">
       <span class="mchip cat" style="color:${c.szin}">${c.nev}</span>
@@ -541,21 +548,21 @@ function renderSheet(id) {
   if (p.utvonal_figyelmeztetes) html += `<div class="callout">⚠️ <span>${esc(p.utvonal_figyelmeztetes)}</span></div>`;
   if (p.szezon_jegyzet) html += `<div class="callout">🏔 <span>${esc(p.szezon_jegyzet)}</span></div>`;
   if (p.megkozelites_jegyzet) html += `<div class="callout info">🥾 <span>${esc(p.megkozelites_jegyzet)}</span></div>`;
-  if (p.foto_jegyzet) html += `<div class="callout photo">📷 <span>${esc(p.foto_jegyzet)}</span></div>`;
+  if (p.foto_leiras) html += `<div class="callout photo">📷 <span>${esc(p.foto_leiras)}</span></div>`;
 
   if (e) {
     const r = e.rating;
     html += `<div class="ratingblock">`;
     if (r?.value) {
       html += `<div class="rrow"><span class="rval">${r.value}</span><span class="rstars">${stars(r.value)}</span>
-        <span class="rmeta">${r.count ? r.count + ' vélemény' : ''}${r.rank ? ' · ' + esc(r.rank) : ''}${r.source ? ' · ' + esc(cap(r.source)) : ''}</span></div>`;
+        <span class="rmeta">${r.count ? r.count + ' vélemény' : ''}${r.rank ? ' · ' + esc(rankTxt(r.rank)) : ''}${r.source ? ' · ' + esc(r.source) : ''}</span></div>`;
     }
     if (e.zsufoltsag) html += `<span class="crowd ${e.zsufoltsag}">Zsúfoltság: ${e.zsufoltsag}</span>`;
     if (e.jelek_hu?.length) html += `<ul class="signals">${e.jelek_hu.map(s => `<li>${esc(s)}</li>`).join('')}</ul>`;
     html += `<span class="rdate">${datumTxtSafe(e)}</span></div>`;
   }
 
-  const tags = (p.cimkek || []).slice(0, 8);
+  const tags = (p.cimkek_publikus || []).slice(0, 6);
   if (tags.length) html += `<div class="tagrow">${tags.map(esc).join(' · ')}</div>`;
 
   const navUrl = p.utvonal_url || p.kereses_url;
@@ -580,6 +587,10 @@ function renderSheet(id) {
   focusPanel($('#sheet'));
 }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+function rankTxt(rank) {
+  const m = /^#(\d+)\/(\d+)\s*(.*)$/.exec(rank || '');
+  return m ? `${m[1]}. hely a ${m[2]} közül${m[3] ? ' · ' + m[3] : ''}` : rank;
+}
 function datumTxtSafe(e) {
   const d = e.rating?.captured_at || e.datum;
   return d ? datumTxt(d) : '';
@@ -684,8 +695,10 @@ function renderMapChips() {
 function searchTerms(p) {
   return [
     p.nev,
+    p.nev_hivatalos,
     p.zona,
     ...(p.cimkek || []),
+    ...(p.cimkek_publikus || []),
     CAT[p.kat]?.nev,
     p.kat,
     ...(p.etel_profil || []).flatMap(x => [PROFIL[x], x]),
@@ -1028,7 +1041,7 @@ window.addEventListener('scroll', () => {
 /* ---------- indulás ---------- */
 async function boot() {
   try {
-    const resp = await fetch('data.json?v=3');
+    const resp = await fetch('data.json?v=4');
     DATA = (await resp.json()).helyek;
   } catch (err) {
     $('#home-content').innerHTML = '<div class="empty">Nem sikerült betölteni a helyeket.<br>Ellenőrizd a kapcsolatot, majd frissítsd az oldalt.</div>';
