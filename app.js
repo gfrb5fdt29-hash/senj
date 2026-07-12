@@ -52,7 +52,7 @@ let currentNavState = null;
 let navDepth = 0, navEpoch = 0;
 let navReady = false, applyingNav = false;
 let scrollSaveTimer = null;
-let sheetOpener = null, pendingSheetOpener = null, settingsOpener = null;
+let sheetOpener = null, pendingSheetOpener = null, settingsOpener = null, highwayOpener = null;
 
 /* ---------- segédek ---------- */
 const $ = s => document.querySelector(s);
@@ -236,9 +236,6 @@ function renderHome() {
       <b>${c.nev}</b><span>${n} hely</span></button>`;
   }).join('');
 
-  $('#homecolls').innerHTML = COLLS.map(c => `<button class="homecoll" data-coll="${c.id}" style="--collection-tone:${c.szin}">
-      <span class="cic" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${c.ic}</svg></span>
-      <b>${c.cim}</b><span class="sub">${vis.filter(c.szuro).length} hely</span></button>`).join('');
 
 }
 
@@ -972,15 +969,17 @@ $('#sheet').addEventListener('touchend', e => {
   if ($('#sheet').scrollTop <= 0 && e.changedTouches[0].clientY - (window._ty || 0) > 90) closeSheet();
 }, { passive: true });
 document.addEventListener('keydown', e => {
+  const highwayOpen = !$('#highwaysheet').classList.contains('hidden');
   const settingsOpen = !$('#settings').classList.contains('hidden');
   const sheetOpen = !$('#sheet').classList.contains('hidden');
   if (e.key === 'Escape') {
-    if (settingsOpen) { e.preventDefault(); closeSettings(); }
+    if (highwayOpen) { e.preventDefault(); closeHighway(); }
+    else if (settingsOpen) { e.preventDefault(); closeSettings(); }
     else if (sheetOpen) { e.preventDefault(); closeSheet(); }
     return;
   }
   if (e.key !== 'Tab') return;
-  const panel = settingsOpen ? $('#settings') : (sheetOpen ? $('#sheet') : null);
+  const panel = highwayOpen ? $('#highwaysheet') : (settingsOpen ? $('#settings') : (sheetOpen ? $('#sheet') : null));
   if (!panel) return;
   const items = panelFocusables(panel);
   if (!items.length) { e.preventDefault(); panel.focus(); return; }
@@ -997,6 +996,40 @@ $('#islands').addEventListener('change', e => {
   renderHome(); renderMarkers();
   if (listState) renderList();
   saveCurrentNav();
+});
+
+
+/* ---------- autópálya-segédlet ---------- */
+function openHighway(opener) {
+  highwayOpener = opener || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  const panel = $('#highwaysheet');
+  panel.scrollTop = 0;
+  panel.classList.remove('hidden');
+  $('#highwayback').classList.remove('hidden');
+  focusPanel(panel);
+}
+function closeHighway() {
+  const opener = highwayOpener;
+  highwayOpener = null;
+  $('#highwaysheet').classList.add('hidden');
+  $('#highwayback').classList.add('hidden');
+  restoreFocus(opener);
+}
+$('#openhighway').onclick = e => openHighway(e.currentTarget);
+$('#closehighway').onclick = closeHighway;
+$('#highwayback').onclick = closeHighway;
+$('#highwaysheet').addEventListener('touchstart', e => { window._hwyTy = e.touches[0].clientY; }, { passive: true });
+$('#highwaysheet').addEventListener('touchend', e => {
+  if ($('#highwaysheet').scrollTop <= 0 && e.changedTouches[0].clientY - (window._hwyTy || 0) > 90) closeHighway();
+}, { passive: true });
+document.querySelectorAll('[data-highway-target]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const panel = $('#highwaysheet');
+    const target = document.getElementById(btn.dataset.highwayTarget);
+    if (!target) return;
+    const delta = target.getBoundingClientRect().top - panel.getBoundingClientRect().top - 66;
+    panel.scrollTo({ top: panel.scrollTop + delta, behavior: 'smooth' });
+  });
 });
 
 /* ---------- beállítások ---------- */

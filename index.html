@@ -16,7 +16,7 @@
 <link rel="preload" href="fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="poppins.css?v=1">
-<link rel="stylesheet" href="app.css?v=28">
+<link rel="stylesheet" href="app.css?v=30">
 </head>
 <body>
 
@@ -37,11 +37,22 @@
   </header>
 
   <div id="home-content">
-    <div class="rowhead"><h2>Kategóriák</h2></div>
     <div class="catgrid" id="catgrid"></div>
 
-    <div class="rowhead"><h2>Gyűjtemények</h2></div>
-    <div class="hscroll" id="homecolls"></div>
+    <section class="home-highway" aria-label="Utazási segédletek">
+      <button class="highway-card" id="openhighway" type="button" aria-haspopup="dialog" aria-controls="highwaysheet">
+        <span class="highway-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 21 10.2 3M16 21 13.8 3M12 5v3M12 11v3M12 17v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="highway-card-copy">
+          <b>Autópálya segédlet</b>
+          <small>Horvát határ ⇄ Senj · útdíjak és kapuk</small>
+        </span>
+        <svg class="highway-card-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </section>
   </div>
 
   <div id="search-results" class="hidden"></div>
@@ -83,6 +94,100 @@
 <section id="sheet" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="sheettitle" tabindex="-1">
   <div class="grip"></div>
   <div id="sheetbody"></div>
+</section>
+
+<!-- ===== AUTÓPÁLYA SEGÉDLET ===== -->
+<div id="highwayback" class="sheetback hidden"></div>
+<section id="highwaysheet" class="sheet highway-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="highwaytitle" tabindex="-1">
+  <div class="grip"></div>
+  <header class="highway-sheet-head">
+    <div>
+      <span class="highway-kicker">OFFLINE SEGÉDLET</span>
+      <h2 id="highwaytitle">Autópálya segédlet</h2>
+      <p>Goričan ⇄ Senj, Google Térkép navigáció mellé.</p>
+    </div>
+    <button id="closehighway" class="highway-close" type="button" aria-label="Autópálya segédlet bezárása">×</button>
+  </header>
+
+  <div class="hw-total" aria-label="Várható útdíjak">
+    <div class="hw-stat"><strong>15,10 €</strong><span>várható díj irányonként</span></div>
+    <div class="hw-stat"><strong>30,20 €</strong><span>várható díj oda-vissza</span></div>
+  </div>
+
+  <nav class="hw-switcher" aria-label="Útvonalválasztó">
+    <button type="button" data-highway-target="hw-odaut">Odaút · Senj felé</button>
+    <button type="button" data-highway-target="hw-visszaut">Visszaút · Magyarország</button>
+  </nav>
+
+  <section class="hw-section" id="hw-odaut">
+    <div class="hw-section-head">
+      <div><h3>Goričan → Senj</h3><p>A horvát határtól Senjig.</p></div>
+      <span class="hw-direction out">ODAUTAZÁS</span>
+    </div>
+
+    <div class="hw-mini-row">
+      <div><b>2×</b><span>jegyfelvétel</span></div>
+      <div><b>2×</b><span>fizetés</span></div>
+      <div><b>15,10 €</b><span>összesen</span></div>
+    </div>
+
+    <div class="hw-card">
+      <h4>Lépésről lépésre</h4>
+      <div class="hw-timeline">
+        <article class="hw-step"><span class="hw-num">1</span><h5>Belépés Horvátországba Goričannál</h5><strong>Kövesd a Google Térkép navigációját.</strong><p>A határ után az A4-es autópályára érkezel. A díjkapunál húzz jegyet az automatából.</p><em>Itt még nem fizetsz.</em></article>
+        <article class="hw-step"><span class="hw-num">2</span><h5>A4: Goričan → Sveta Helena</h5><strong>Haladj Zágráb irányába.</strong><p>Sveta Helenánál add át vagy helyezd be a jegyet, majd fizess.</p><mark>Várható díj: 6,40 €</mark></article>
+        <article class="hw-step"><span class="hw-num">3</span><h5>Sveta Helena → zágrábi elkerülő</h5><strong>Kövesd tovább a navigációt.</strong><p>Az összekötő szakaszon nincs külön útdíjfizetés.</p></article>
+        <article class="hw-step"><span class="hw-num">4</span><h5>Felhajtás az A1-re Zagreb/Lučko térségében</h5><strong>A díjkapunál húzz egy új jegyet.</strong><em>Itt még nem fizetsz.</em></article>
+        <article class="hw-step"><span class="hw-num">5</span><h5>A1: Zagreb/Lučko → Žuta Lokva</h5><strong>Kövesd végig a Google Térkép navigációját.</strong><p>Haladj az A1-es autópályán a navigáció által jelzett útvonalon.</p></article>
+        <article class="hw-step"><span class="hw-num">6</span><h5>Lehajtás Žuta Lokvánál</h5><strong>A kapunál add át vagy helyezd be a második jegyet.</strong><p>Fizess bankkártyával vagy euró készpénzzel.</p><mark>Várható díj: 8,70 €</mark></article>
+        <article class="hw-step"><span class="hw-num">7</span><h5>Žuta Lokva → Senj</h5><strong>Kövesd tovább a Google Térkép navigációját.</strong><p>Innen hegyi, kanyargós, lejtős út vezet Senjbe.</p><em>Ezen a szakaszon nincs további útdíj.</em></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="hw-section" id="hw-visszaut">
+    <div class="hw-section-head">
+      <div><h3>Senj → magyar határ</h3><p>Senjtől a Goričan–Letenye határátkelőig.</p></div>
+      <span class="hw-direction back">VISSZAÚT</span>
+    </div>
+
+    <div class="hw-mini-row">
+      <div><b>2×</b><span>jegyfelvétel</span></div>
+      <div><b>2×</b><span>fizetés</span></div>
+      <div><b>15,10 €</b><span>összesen</span></div>
+    </div>
+
+    <div class="hw-card">
+      <h4>Lépésről lépésre</h4>
+      <div class="hw-timeline">
+        <article class="hw-step"><span class="hw-num">1</span><h5>Indulás Senjből</h5><strong>Kövesd a Google Térkép navigációját Žuta Lokva felé.</strong><p>A hegyi, kanyargós D23-as úton haladsz az autópálya felé.</p><em>Ezen a szakaszon nincs útdíj.</em></article>
+        <article class="hw-step"><span class="hw-num">2</span><h5>Felhajtás az A1-re Žuta Lokvánál</h5><strong>A díjkapunál húzz jegyet.</strong><em>Itt még nem fizetsz.</em></article>
+        <article class="hw-step"><span class="hw-num">3</span><h5>A1: Žuta Lokva → Zagreb/Lučko</h5><strong>Kövesd végig a Google Térkép navigációját.</strong><p>Haladj az A1-es autópályán Zágráb felé.</p></article>
+        <article class="hw-step"><span class="hw-num">4</span><h5>Fizetés Zagreb/Lučko térségében</h5><strong>Add át vagy helyezd be az első jegyet.</strong><p>Fizess bankkártyával vagy euró készpénzzel.</p><mark>Várható díj: 8,70 €</mark></article>
+        <article class="hw-step"><span class="hw-num">5</span><h5>Zágrábi elkerülő → Sveta Helena</h5><strong>Kövesd tovább a Google Térkép navigációját.</strong><p>Az összekötő szakaszon nincs külön útdíjfizetés.</p></article>
+        <article class="hw-step"><span class="hw-num">6</span><h5>Felhajtás az A4-re Sveta Helenánál</h5><strong>A díjkapunál húzz egy új jegyet.</strong><em>Itt még nem fizetsz.</em></article>
+        <article class="hw-step"><span class="hw-num">7</span><h5>A4: Sveta Helena → Goričan</h5><strong>Kövesd végig a Google Térkép navigációját.</strong><p>Haladj tovább a magyar határ felé.</p></article>
+        <article class="hw-step"><span class="hw-num">8</span><h5>Fizetés Goričannál</h5><strong>Add át vagy helyezd be a második jegyet.</strong><p>Fizess bankkártyával vagy euró készpénzzel.</p><mark>Várható díj: 6,40 €</mark></article>
+        <article class="hw-step"><span class="hw-num">9</span><h5>Horvát–magyar határ</h5><strong>Goričan → Letenye</strong><p>A díjkapu után folytasd az utat a határ felé.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="hw-card hw-common">
+    <h4>Díjkapunál mit csinálj?</h4>
+    <ul>
+      <li>Felhajtáskor húzd ki a jegyet az automatából.</li>
+      <li>Lehajtáskor add át vagy helyezd be a jegyet.</li>
+      <li>Fizess bankkártyával vagy euró készpénzzel.</li>
+      <li>A jegyet tartsd biztos helyen, ne hajtsd össze és ne veszítsd el.</li>
+    </ul>
+    <div class="hw-costs">
+      <span>Goričan ⇄ Sveta Helena</span><b>6,40 €</b>
+      <span>Zagreb/Lučko ⇄ Žuta Lokva</span><b>8,70 €</b>
+      <strong>Egy irány összesen</strong><b>15,10 €</b>
+      <strong>Oda-vissza összesen</strong><b>30,20 €</b>
+    </div>
+  </section>
 </section>
 
 <!-- ===== BEÁLLÍTÁSOK ===== -->
@@ -129,6 +234,6 @@
   <button id="installdismiss" aria-label="Bezárás">✕</button>
 </div>
 
-<script src="app.js?v=19"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

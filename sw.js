@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v38';
+const CACHE = 'senj-utikalauz-v40';
 const CACHE_PREFIX = 'senj-utikalauz-';
 const CORE = [
   './',
