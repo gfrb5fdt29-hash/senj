@@ -79,3 +79,104 @@ button,input{font:inherit}.hidden{display:none!important}
 .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;padding-bottom:env(safe-area-inset-bottom);border-radius:0}.bottomnav button{flex:1;background:none;border:none;color:rgba(9,54,78,.68);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10.5px;font-weight:700}.bottomnav button svg{width:23px;height:23px}.bottomnav button.active{color:var(--ink)}.installtip{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + 10px);z-index:85;border-radius:16px;padding:12px 40px 12px 15px;font-size:13.5px;line-height:1.5}.installtip .shic{width:15px;height:15px;vertical-align:-2px;color:var(--c-strand)}.installtip button{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:6px}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+
+/* iPhone/PWA: alacsonyabb alsó navigáció és erősebb aktívfül-glow */
+:root{
+  --nav-safe-bottom:max(5px,calc(env(safe-area-inset-bottom) - 28px));
+  --nav-h:calc(58px + var(--nav-safe-bottom));
+}
+.bottomnav{
+  min-height:var(--nav-h);
+  padding:2px 4px var(--nav-safe-bottom);
+  overflow:visible;
+}
+.bottomnav button{
+  position:relative;
+  isolation:isolate;
+  justify-content:flex-end;
+  gap:2px;
+  padding:3px 2px 4px;
+  font-size:10.5px;
+}
+.bottomnav button::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:-2px 3px -2px;
+  border:1px solid rgba(235,255,255,.9);
+  border-radius:18px;
+  opacity:0;
+  transform:scale(.78);
+  background:
+    radial-gradient(ellipse at 50% 44%,
+      rgba(255,255,255,.99) 0%,
+      rgba(214,252,255,.95) 24%,
+      rgba(83,228,247,.72) 50%,
+      rgba(7,159,218,.36) 70%,
+      transparent 88%);
+  box-shadow:
+    0 0 10px rgba(255,255,255,.98),
+    0 0 24px rgba(91,231,249,.98),
+    0 0 48px rgba(0,138,207,.78),
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(4,122,171,.22);
+  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.bottomnav button svg,
+.bottomnav button span{
+  position:relative;
+  z-index:1;
+}
+.bottomnav button::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:50%;
+  bottom:0;
+  width:30px;
+  height:3px;
+  border-radius:999px;
+  opacity:0;
+  transform:translateX(-50%) scaleX(.35);
+  background:rgba(238,255,255,.98);
+  box-shadow:
+    0 0 6px rgba(255,255,255,1),
+    0 0 15px rgba(73,226,247,1),
+    0 0 28px rgba(0,139,209,.9);
+  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.bottomnav button.active{
+  color:#052f47;
+  font-weight:700;
+}
+.bottomnav button.active::before{
+  opacity:.96;
+  transform:scale(1.03);
+}
+.bottomnav button.active::after{
+  opacity:1;
+  transform:translateX(-50%) scaleX(1);
+}
+.bottomnav button.active svg{
+  transform:translateY(-1px) scale(1.1);
+  filter:
+    drop-shadow(0 0 2px rgba(255,255,255,1))
+    drop-shadow(0 0 7px rgba(79,228,248,1))
+    drop-shadow(0 0 15px rgba(0,136,207,.95));
+}
+.bottomnav button.active span{
+  text-shadow:
+    0 0 3px rgba(255,255,255,1),
+    0 0 9px rgba(77,227,247,1),
+    0 0 18px rgba(0,137,207,.9);
+}
+
+/* Főképernyőre telepített iPhone-appban a fülek kerüljenek még lejjebb. */
+@media (display-mode:standalone){
+  :root{
+    --nav-safe-bottom:max(4px,calc(env(safe-area-inset-bottom) - 30px));
+    --nav-h:calc(57px + var(--nav-safe-bottom));
+  }
+  .bottomnav{padding-top:1px}
+  .bottomnav button{padding-bottom:3px}
+}
