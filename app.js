@@ -108,6 +108,31 @@ function isLargeShopping(p) {
   return p.praktikus_tipus === 'bolt' && (publicTags(p).includes('nagy bevasarlashoz') || /\b(lidl|plodine|spar|tommy|konzum)\b/.test(norm(p.nev)));
 }
 function isSmallShopping(p) { return p.praktikus_tipus === 'bolt' && !isLargeShopping(p); }
+function gridLabels(p) {
+  if (p.kat === 'etterem') {
+    const profiles = new Set(p.etel_profil || []);
+    const raw = publicTags(p);
+    const labels = [];
+    if (profiles.has('grill')) labels.push('Grill');
+    if (raw.some(t => t.includes('husos etelek'))) labels.push('Húsos ételek');
+    for (const [key, label] of [['pizza','Pizza'],['teszta','Tészta'],['helyi_konyha','Helyi konyha'],['tengeri','Tengeri'],['kave_desszert','Kávé & desszert']]) {
+      if (profiles.has(key)) labels.push(label);
+    }
+    labels.push(profiles.has('gyors') ? 'Gyors' : 'Ráérős');
+    return [...new Set(labels)].slice(0, 3);
+  }
+  if (p.kat === 'praktikus') {
+    const type = p.praktikus_tipus === 'bolt'
+      ? (isLargeShopping(p) ? 'Nagy bevásárlás' : 'Kis bevásárlás')
+      : ({ pekseg:'Pékség', gyogyszertar:'Gyógyszertár', benzinkut:'Benzinkút', piac:'Piac', egyeb:'Helyi termékek' }[p.praktikus_tipus] || 'Praktikus hely');
+    const extras = (p.cimkek_publikus || []).filter(tag => {
+      const t = norm(tag);
+      return !['kisbolt','gyors bevasarlas','nagy bevasarlashoz','bevasarlas','gyogyszertar','pekseg','benzinkut','piac'].includes(t);
+    });
+    return [...new Set([type, ...extras])].slice(0, 3);
+  }
+  return [];
+}
 function catIcon(p) {
   if (p.facettak?.includes('vilagitotorony')) return ICONS.torony;
   return ICONS[p.kat] || ICONS.praktikus;
@@ -142,11 +167,12 @@ function renderRows(el, arr, empty) {
 }
 function placeGridCard(p) {
   const img = imageOf(p);
+  const labels = gridLabels(p);
   const media = img
     ? `<span class="gridmedia"><img src="${esc(img.belyegkep || img.borito)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="gridmedia gridicon"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`;
   return `<button class="placegridcard cat-${p.kat}" data-id="${p.id}">
-    ${media}<span class="gridcopy"><b>${esc(p.nev)}</b><span class="gridzone">${esc(p.zona)}</span><span class="gridkm">${kmTxt(distOf(p))}</span></span>
+    ${media}<span class="gridcopy"><b>${esc(p.nev)}</b><span class="gridzone">${esc(p.zona)}</span>${labels.length ? `<span class="gridtags">${labels.map(label => `<i>${esc(label)}</i>`).join('')}</span>` : ''}<span class="gridkm">${kmTxt(distOf(p))}</span></span>
   </button>`;
 }
 function sortByDist(arr) { return [...arr].sort((a, b) => (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9)); }
