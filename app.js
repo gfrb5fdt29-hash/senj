@@ -746,6 +746,7 @@ function runSearch(q) {
     wrap.classList.remove('hasq');
     $('#search-results').classList.add('hidden');
     $('#home-content').classList.remove('hidden');
+    updateScrollLock();
     return;
   }
   wrap.classList.add('hasq');
@@ -758,6 +759,7 @@ function runSearch(q) {
   res.classList.remove('hidden');
   res.innerHTML = `<div class="reshead">${allHits.length} találat${allHits.length > hits.length ? ' · az első 40 látható' : ''}</div>` +
     (hits.map(placeRow).join('') || '<div class="empty">Nincs találat. Próbáld másképp — pl. „pizza", „naplemente", „Krk".</div>');
+  updateScrollLock();
 }
 function handleSearchInput(q) {
   const hasQuery = !!norm(q.trim());
@@ -782,11 +784,17 @@ function setActiveTab(t) {
   document.querySelectorAll('.bottomnav button').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === t));
 }
+function updateScrollLock() {
+  const homeActive = $('#view-home').classList.contains('active');
+  const searching = !$('#search-results').classList.contains('hidden');
+  document.body.classList.toggle('home-lock', homeActive && !searching);
+}
 function showView(v, keepTab) {
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   $('#view-' + v).classList.add('active');
   if (!keepTab) setActiveTab(v);
   window.scrollTo(0, 0);
+  updateScrollLock();
 }
 function renderTab(t) {
   hideSheet();

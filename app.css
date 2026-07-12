@@ -14,6 +14,7 @@
   --ease:cubic-bezier(.2,.9,.3,1);
   --dur:.22s;
   --nav-h:calc(58px + env(safe-area-inset-bottom));
+  --nav-lift:8px;
   --c-strand:#007F7B;
   --c-kilato:#96690F;
   --c-etterem:#B04F51;
@@ -22,7 +23,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#063C63}
 html,body{margin:0;padding:0;background:transparent;color:var(--ink);font-family:'Poppins',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior-y:none}
-body{position:relative;isolation:isolate;padding-bottom:var(--nav-h)}
+body{position:relative;isolation:isolate;padding-bottom:calc(var(--nav-h) + var(--nav-lift))}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(rgba(3,28,52,.14),rgba(3,28,52,.14)),url('ocean.webp') center / cover no-repeat}
 button,input{font:inherit}.hidden{display:none!important}
 
@@ -76,8 +77,11 @@ button,input{font:inherit}.hidden{display:none!important}
 .stattiles{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin:14px 0 4px}.stat{min-width:0;border-radius:14px;padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.stat-ic{display:flex;color:var(--muted)}.stat-ic svg{width:20px;height:20px}.stat b{max-width:100%;font-size:14.5px;overflow-wrap:anywhere}.stat span{color:var(--muted);font-size:10.5px}.amensec{margin:15px 0 2px}.amenhead{margin:0 0 9px;color:var(--ink);font-size:13px;font-weight:700}.amenrow{display:flex;flex-wrap:wrap;gap:8px}.amen{display:flex;align-items:center;gap:6px;border-radius:12px;padding:7px 11px;font-size:12.5px;font-weight:600}.amen-ic{display:flex}.amen-ic svg{width:17px;height:17px}
 #settings h2{font-size:20px}.setgroup{margin:12px 0;border-radius:var(--radius);overflow:hidden}.setrow,.setbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;font-size:15px}.setrow,.setbtn{border:0;border-top:1px solid var(--glass-line)}.setgroup :first-child{border-top:none}.setbtn{width:100%;background:transparent;color:var(--ink);text-align:left}.setval,.setabout{color:var(--muted);font-size:13.5px}.setabout{font-size:12.5px;line-height:1.6;padding:6px 4px 4px;text-align:center}.switch{position:relative;display:flex;align-items:center}.switch input{position:absolute;opacity:0;width:1px;height:1px}.switch .knob{width:38px;height:23px;border-radius:20px;background:rgba(255,255,255,.46);border:1px solid var(--glass-line);position:relative;transition:var(--dur)}.switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--muted);transition:var(--dur)}.switch input:checked+.knob{background:rgba(203,239,236,.72)}.switch input:checked+.knob::after{left:17px;background:var(--c-strand)}.switch input:focus-visible+.knob{outline:2px solid var(--ink);outline-offset:3px}
 
+/* Böngésző fül: nincs elég tartalom a görgetéshez, amíg nincs aktív keresés */
+body.home-lock{overflow:hidden;height:100vh;height:100dvh}
+
 /* Alsó navigáció és telepítési tipp */
-.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;padding-bottom:env(safe-area-inset-bottom);border-radius:0}.bottomnav button{flex:1;background:none;border:none;color:rgba(9,54,78,.68);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10.5px;font-weight:700}.bottomnav button svg{width:23px;height:23px}.bottomnav button.active{color:var(--ink)}.installtip{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + 10px);z-index:85;border-radius:16px;padding:12px 40px 12px 15px;font-size:13.5px;line-height:1.5}.installtip .shic{width:15px;height:15px;vertical-align:-2px;color:var(--c-strand)}.installtip button{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:6px}
+.bottomnav{position:fixed;left:0;right:0;bottom:var(--nav-lift);z-index:80;display:flex;padding-bottom:env(safe-area-inset-bottom);border-radius:0;background:none!important;border:none!important;box-shadow:none!important}.bottomnav button{flex:1;background:none;border:none;color:rgba(9,54,78,.68);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10.5px;font-weight:700}.bottomnav button svg{width:23px;height:23px}.bottomnav button.active{color:var(--ink)}.installtip{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + var(--nav-lift) + 10px);z-index:85;border-radius:16px;padding:12px 40px 12px 15px;font-size:13.5px;line-height:1.5}.installtip .shic{width:15px;height:15px;vertical-align:-2px;color:var(--c-strand)}.installtip button{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:6px}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 
