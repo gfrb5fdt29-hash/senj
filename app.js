@@ -120,7 +120,7 @@ function placeRow(p) {
   const media = img
     ? `<span class="dot photo"><img src="${esc(img.belyegkep || img.borito)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="dot" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`;
-  return `<button class="place" data-id="${p.id}" style="width:100%;background:none;border:none;color:inherit;text-align:left">
+  return `<button class="place cat-${p.kat}" data-id="${p.id}" style="width:100%;background:none;border:none;color:inherit;text-align:left">
     ${media}
     <span class="mid"><b>${esc(p.nev)}</b><span class="sub">${badges}${esc(p.zona)}</span></span>
     <span class="right"><span class="km">${kmTxt(d)}</span>${r ? `<div class="star">★ ${r}</div>` : ''}</span>
@@ -128,6 +128,15 @@ function placeRow(p) {
 }
 function renderRows(el, arr, empty) {
   el.innerHTML = arr.length ? arr.map(placeRow).join('') : `<div class="empty">${empty || 'Nincs találat.'}</div>`;
+}
+function placeGridCard(p) {
+  const img = imageOf(p);
+  const media = img
+    ? `<span class="gridmedia"><img src="${esc(img.belyegkep || img.borito)}" alt="" loading="lazy" decoding="async"></span>`
+    : `<span class="gridmedia gridicon"><svg viewBox="0 0 24 24">${catIcon(p)}</svg></span>`;
+  return `<button class="placegridcard cat-${p.kat}" data-id="${p.id}">
+    ${media}<span class="gridcopy"><b>${esc(p.nev)}</b><span class="gridzone">${esc(p.zona)}</span><span class="gridkm">${kmTxt(distOf(p))}</span></span>
+  </button>`;
 }
 function sortByDist(arr) { return [...arr].sort((a, b) => (distOf(a) ?? 9e9) - (distOf(b) ?? 9e9)); }
 
@@ -141,14 +150,14 @@ function renderHome() {
       <b>${c.nev}</b><span>${n} hely</span></button>`;
   }).join('');
 
-  $('#homecolls').innerHTML = COLLS.map(c => `<button class="homecoll" data-coll="${c.id}">
+  $('#homecolls').innerHTML = COLLS.map(c => `<button class="homecoll" data-coll="${c.id}" style="--collection-tone:${c.szin}">
       <span class="cic" style="background:${c.bg};color:${c.szin}"><svg viewBox="0 0 24 24">${c.ic}</svg></span>
       <b>${c.cim}</b><span class="sub">${vis.filter(c.szuro).length} hely</span></button>`).join('');
 
   const reco = sortByDist(vis.filter(isReco)).sort((a, b) => (b.ertekeles?.rating?.value ?? 0) - (a.ertekeles?.rating?.value ?? 0)).slice(0, 10);
   $('#reco').innerHTML = reco.map(p => {
     const r = p.ertekeles?.rating;
-    return `<button class="recocard" data-id="${p.id}">
+    return `<button class="recocard cat-${p.kat}" data-id="${p.id}">
       <b>${esc(p.nev)}</b>
       <span class="sub">${esc(p.zona)} · ${kmTxt(distOf(p))}</span>
       <span class="sub" style="color:var(--amber)">${r?.value ? `★ ${r.value}` : ''}${r?.count ? ` · ${r.count} vélemény` : ''}</span>
@@ -206,6 +215,8 @@ function listItems() {
   return arr;
 }
 function renderList() {
+  const body = $('#listbody');
+  body.classList.toggle('placegrid', listState.tipus === 'cat');
   if (listState.tipus === 'terv') {
     renderTervList();
     return;
@@ -214,7 +225,12 @@ function renderList() {
     $('#listchips').innerHTML = defs.map(([k, l]) =>
       `<button class="chip ${listState.chip === k ? 'on' : ''}" data-chip="${k}">${l}</button>`).join('');
   }
-  renderRows($('#listbody'), listItems());
+  const items = listItems();
+  if (listState.tipus === 'cat') {
+    body.innerHTML = items.length ? items.map(placeGridCard).join('') : '<div class="empty">Nincs találat.</div>';
+  } else {
+    renderRows(body, items);
+  }
 }
 
 /* ---------- GYŰJTEMÉNYEK ---------- */
@@ -551,6 +567,7 @@ function renderSheet(id) {
   </div>`;
 
   $('#sheetbody').innerHTML = html;
+  $('#sheet').dataset.category = p.kat;
   $('#sheet').classList.remove('hidden');
   $('#sheetback').classList.remove('hidden');
   $('#sheetfav').onclick = () => {
@@ -721,6 +738,7 @@ function setActiveTab(t) {
     b.classList.toggle('active', b.dataset.tab === t));
 }
 function showView(v, keepTab) {
+  document.body.classList.toggle('map-active', v === 'map');
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
   $('#view-' + v).classList.add('active');
   if (!keepTab) setActiveTab(v);
@@ -734,7 +752,7 @@ function renderTab(t) {
     renderMapChips();
     if (mapReady) {
       if (navigator.onLine) hideMapMessage(); else showOfflineMapMessage();
-      setTimeout(() => map.invalidateSize(), 60);
+      requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
     }
   }
   if (t === 'fav') renderFavs();
@@ -807,7 +825,7 @@ function applyNavState(state) {
     const mv = clean.mapView;
     if (map && mv && Number.isFinite(mv.lat) && Number.isFinite(mv.lng) && Number.isFinite(mv.zoom))
       map.setView([mv.lat, mv.lng], mv.zoom);
-    if (map) setTimeout(() => map.invalidateSize(), 60);
+    if (map) requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize()));
   }
   if (clean.sheetId) renderSheet(clean.sheetId);
 
