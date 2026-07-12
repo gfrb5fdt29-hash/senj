@@ -164,7 +164,7 @@ function catIcon(p) {
   if (p.facettak?.includes('vilagitotorony')) return ICONS.torony;
   return ICONS[p.kat] || ICONS.praktikus;
 }
-const PRAKT_TIPUS_KEP = { pekseg: 'images/categories/pekseg.webp', gyogyszertar: 'images/categories/pill.webp' };
+const PRAKT_TIPUS_KEP = { pekseg: 'images/categories/pekseg.webp', gyogyszertar: 'images/categories/pill.webp', benzinkut: 'images/categories/gas.webp' };
 function praktikusKep(p) {
   const nev = norm(p.nev);
   let src = 'images/categories/bolt.webp';

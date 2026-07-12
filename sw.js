@@ -1,5 +1,5 @@
 /* Senj útikalauz — service worker (offline működés) */
-const CACHE = 'senj-utikalauz-v42';
+const CACHE = 'senj-utikalauz-v43';
 const CACHE_PREFIX = 'senj-utikalauz-';
 const CORE = [
   './',
@@ -28,6 +28,7 @@ const CORE = [
   'images/categories/pekseg.webp',
   'images/categories/pill.webp',
   'images/categories/bolt.webp',
+  'images/categories/gas.webp',
   'images/places/B-0001.webp',
   'images/places/B-0004.webp',
   'images/places/B-0011.webp',
