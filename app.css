@@ -47,7 +47,7 @@ button,input{font:inherit}.hidden{display:none!important}
 /* Böngésző */
 .searchwrap{display:flex;align-items:center;gap:8px;border-radius:14px;padding:0 12px}.searchwrap .sic{width:18px;height:18px;color:var(--muted);flex-shrink:0}
 #search{flex:1;min-width:0;background:none;border:none;color:var(--ink);font-size:16px;padding:12px 0;outline:none}#search::placeholder{color:var(--muted)}.sclear{background:none;border:none;color:var(--muted);font-size:15px;padding:6px;display:none}.searchwrap.hasq .sclear{display:block}
-.gear,.back{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0}.gear svg{width:20px;height:20px}.back{font-size:24px;line-height:1}.gear:active{transform:scale(.94) rotate(25deg)}
+.gear,.back{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0}.gear{width:42px;height:42px;border-radius:13px}.gear svg{width:23px;height:23px;stroke-width:2.1}.back{font-size:24px;line-height:1}.gear:active{transform:scale(.94) rotate(25deg)}
 #home-content{padding-top:18px}
 .rowhead{display:flex;align-items:baseline;justify-content:space-between;padding:24px 18px 10px}.rowhead h2{margin:0;color:var(--header);font-size:19px;font-weight:600;text-shadow:0 1px 5px rgba(1,20,40,.42)}.rowhead .hint{color:var(--header-muted);font-size:12.5px}
 .catgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0 18px}.catcard{min-width:0;border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left}.catcard b{font-size:15.5px}.catcard span{color:var(--muted);font-size:12.5px}.cic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}.cic svg{width:20px;height:20px}
@@ -81,7 +81,7 @@ button,input{font:inherit}.hidden{display:none!important}
 body.home-lock{overflow:hidden;height:100vh;height:100dvh}
 
 /* Alsó navigáció és telepítési tipp */
-.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;padding-bottom:env(safe-area-inset-bottom);border-radius:0;background:none!important;border:none!important;box-shadow:none!important;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14px);mask-image:linear-gradient(to bottom,transparent,#000 14px);backdrop-filter:blur(18px) saturate(110%)!important;-webkit-backdrop-filter:blur(18px) saturate(110%)!important}.bottomnav button{flex:1;background:none;border:none;color:rgba(9,54,78,.68);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10.5px;font-weight:700}.bottomnav button svg{width:23px;height:23px}.bottomnav button.active{color:var(--ink)}.installtip{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + var(--nav-lift) + 10px);z-index:85;border-radius:16px;padding:12px 40px 12px 15px;font-size:13.5px;line-height:1.5}.installtip .shic{width:15px;height:15px;vertical-align:-2px;color:var(--c-strand)}.installtip button{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:6px}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;padding-bottom:env(safe-area-inset-bottom);border-radius:0;background:none!important;border:none!important;box-shadow:none!important;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 var(--nav-glow-gap));mask-image:linear-gradient(to bottom,transparent,#000 var(--nav-glow-gap));backdrop-filter:blur(18px) saturate(110%)!important;-webkit-backdrop-filter:blur(18px) saturate(110%)!important}.bottomnav button{flex:1;background:none;border:none;color:rgba(9,54,78,.68);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10.5px;font-weight:700}.bottomnav button svg{width:23px;height:23px}.bottomnav button.active{color:var(--ink)}.installtip{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + var(--nav-lift) + 10px);z-index:85;border-radius:16px;padding:12px 40px 12px 15px;font-size:13.5px;line-height:1.5}.installtip .shic{width:15px;height:15px;vertical-align:-2px;color:var(--c-strand)}.installtip button{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;padding:6px}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 
@@ -89,10 +89,11 @@ body.home-lock{overflow:hidden;height:100vh;height:100dvh}
 :root{
   --nav-safe-bottom:max(5px,calc(env(safe-area-inset-bottom) - 28px));
   --nav-h:calc(58px + var(--nav-safe-bottom));
+  --nav-glow-gap:calc(var(--nav-safe-bottom) + var(--nav-lift) - 2px);
 }
 .bottomnav{
-  min-height:calc(var(--nav-h) + var(--nav-lift));
-  padding:2px 4px calc(var(--nav-safe-bottom) + var(--nav-lift));
+  min-height:calc(var(--nav-h) + var(--nav-lift) + var(--nav-glow-gap));
+  padding:calc(2px + var(--nav-glow-gap)) 4px calc(var(--nav-safe-bottom) + var(--nav-lift));
   overflow:visible;
 }
 .bottomnav button{
